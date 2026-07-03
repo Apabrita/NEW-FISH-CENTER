@@ -3,7 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import {
   loadAll,
   getLocalOptimisticData,
@@ -15,7 +22,7 @@ import {
   clearAllLocalState,
   setupRealtimeSubscriptions,
   NFCData,
-  QueueItem
+  QueueItem,
 } from "../db";
 
 interface DataContextType {
@@ -34,23 +41,29 @@ interface DataContextType {
   write: <K extends keyof NFCData>(
     table: K,
     action: "insert" | "update" | "upsert" | "delete",
-    payload: any
+    payload: any,
   ) => Promise<boolean>;
   writeBatch: (
     items: {
       table: keyof NFCData;
       action: "insert" | "update" | "upsert" | "delete";
       payload: any;
-    }[]
+    }[],
   ) => Promise<boolean>;
   toggleNetworkSimulation: () => void;
-  triggerSync: () => Promise<{ success: boolean; processed: number; remaining: number }>;
+  triggerSync: () => Promise<{
+    success: boolean;
+    processed: number;
+    remaining: number;
+  }>;
   resetToDefault: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const isFirstLoadRef = useRef(true);
   const [data, setData] = useState<NFCData | null>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -60,7 +73,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [syncConfigured] = useState(isSyncConfigured());
 
   // Theme states
-  const [theme, setThemeState] = useState<"light" | "dark" | "system">("system");
+  const [theme, setThemeState] = useState<"light" | "dark" | "system">(
+    "system",
+  );
   const [activeTheme, setActiveTheme] = useState<"light" | "dark">("dark");
   const [appDate, setAppDateState] = useState<string>(() => {
     return new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD local timezone
@@ -68,14 +83,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedTheme = localStorage.getItem("nfc_theme_mode") as "light" | "dark" | "system" | null;
+      const savedTheme = localStorage.getItem("nfc_theme_mode") as
+        | "light"
+        | "dark"
+        | "system"
+        | null;
       if (savedTheme) {
         setThemeState(savedTheme);
       }
-      
+
       const cachedDate = sessionStorage.getItem("nfc_app_date");
       const todayString = new Date().toLocaleDateString("en-CA");
-      
+
       // Use sessionStorage so the app resets to today on a fresh open/new tab
       // but survives a simple page reload.
       if (!cachedDate) {
@@ -114,30 +133,34 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setActiveTheme(theme);
     }
   }, [theme]);
-
   // Synchronize HTML classes with the theme changes
   useEffect(() => {
     if (typeof document !== "undefined") {
       const root = document.documentElement;
+      let metaTheme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]:not([media])');
+      if (!metaTheme) {
+        metaTheme = document.createElement('meta');
+        metaTheme.name = "theme-color";
+        document.head.appendChild(metaTheme);
+      }
       if (activeTheme === "light") {
-        root.classList.add("theme-light");
-        root.classList.remove("theme-dark");
-        root.classList.add("light");
-        root.classList.remove("dark");
+        root.classList.add("theme-light", "light");
+        root.classList.remove("theme-dark", "dark");
+        metaTheme.content = "#f2f2f7";
       } else {
-        root.classList.add("theme-dark");
-        root.classList.remove("theme-light");
-        root.classList.add("dark");
-        root.classList.remove("light");
+        root.classList.add("theme-dark", "dark");
+        root.classList.remove("theme-light", "light");
+        metaTheme.content = "#000000";
       }
     }
   }, [activeTheme]);
 
-
   // Check state on loading
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setSimulatedOffline(localStorage.getItem("nfc_simulated_offline") === "true");
+      setSimulatedOffline(
+        localStorage.getItem("nfc_simulated_offline") === "true",
+      );
     }
   }, []);
 
@@ -153,26 +176,31 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setOnline(isOnline());
     } catch (e) {
       console.warn("Local cache aggregator failed", e);
-    } 
+    }
 
     if (isFirstLoadRef.current) {
       isFirstLoadRef.current = false;
-      
+
       if (!hasCache && isOnline()) {
-         // Block rendering up to brief timeout to fetch all cloud data on a totally fresh install
-         loadAll().then(fullData => {
+        // Block rendering up to brief timeout to fetch all cloud data on a totally fresh install
+        loadAll()
+          .then((fullData) => {
             setData(fullData);
-         }).catch(err => console.warn(err)).finally(() => {
+          })
+          .catch((err) => console.warn(err))
+          .finally(() => {
             setLoading(false);
-         });
+          });
       } else {
-         // App already has cached data, drop loading screen instantly
-         setLoading(false);
-         
-         // Background sync to prune deleted items and fetch latest
-         loadAll().then(fullData => {
+        // App already has cached data, drop loading screen instantly
+        setLoading(false);
+
+        // Background sync to prune deleted items and fetch latest
+        loadAll()
+          .then((fullData) => {
             setData(fullData);
-         }).catch(err => console.warn(err));
+          })
+          .catch((err) => console.warn(err));
       }
     }
   }, []);
@@ -205,19 +233,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setOnline(isOnline());
       if (isOnline()) {
         processQueue().then((res) => {
-           if (res && res.processed > 0) handleQueueUpdated();
+          if (res && res.processed > 0) handleQueueUpdated();
         });
         refreshData();
       }
     };
 
     const handleVisibilityChange = () => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState === "visible"
+      ) {
         if (isOnline()) {
-           processQueue().then((res) => {
-               if (res && res.processed > 0) handleQueueUpdated();
-           });
-           refreshData();
+          processQueue().then((res) => {
+            if (res && res.processed > 0) handleQueueUpdated();
+          });
+          refreshData();
         }
       }
     };
@@ -231,9 +262,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Fallback Background Polling for Mobile wrappers where WebSockets might sleep
     const syncInterval = setInterval(() => {
-        if (isOnline()) {
-            refreshData();
-        }
+      if (isOnline()) {
+        refreshData();
+      }
     }, 120000); // Poll every 2 minutes instead of aggressive polling
 
     return () => {
@@ -241,7 +272,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         window.removeEventListener("queue_updated", handleQueueUpdated);
         window.removeEventListener("online", handleOnlineStatus);
         window.removeEventListener("offline", handleOnlineStatus);
-        document.removeEventListener("visibilitychange", handleVisibilityChange);
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange,
+        );
       }
       clearInterval(syncInterval);
     };
@@ -254,11 +288,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         processQueue()
           .then((res) => {
             if (res && res.processed > 0) {
-              console.log(`[AutoSync] Background processed ${res.processed} items.`);
+              console.log(
+                `[AutoSync] Background processed ${res.processed} items.`,
+              );
               refreshData();
             }
           })
-          .catch((err) => console.error("[AutoSync] Automated sync error:", err));
+          .catch((err) =>
+            console.error("[AutoSync] Automated sync error:", err),
+          );
       }, 2000);
       return () => clearTimeout(autoSyncTimer);
     }
@@ -268,7 +306,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const write = async <K extends keyof NFCData>(
     table: K,
     action: "insert" | "update" | "upsert" | "delete",
-    payload: any
+    payload: any,
   ) => {
     const res = await executeWrite(table, action, payload);
     await refreshData();
@@ -280,7 +318,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       table: keyof NFCData;
       action: "insert" | "update" | "upsert" | "delete";
       payload: any;
-    }[]
+    }[],
   ) => {
     for (const item of items) {
       await executeWrite(item.table, item.action, item.payload);
@@ -296,7 +334,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSimulatedOffline(!current);
     const updatedOnline = isOnline();
     setOnline(updatedOnline);
-    
+
     // Dispatch offline/online event
     window.dispatchEvent(new Event(updatedOnline ? "online" : "offline"));
     refreshData();

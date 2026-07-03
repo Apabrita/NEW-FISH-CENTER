@@ -4,8 +4,21 @@
  */
 
 import React, { useState } from "react";
-import { useData } from "./DataContext";
-import { PlusCircle, Search, User, CreditCard, ChevronRight, Check, X, ShieldAlert, CheckSquare, RefreshCcw, DollarSign, Award } from "lucide-react";
+import { useData } from "../contexts/DataContext";
+import {
+  PlusCircle,
+  Search,
+  User,
+  CreditCard,
+  ChevronRight,
+  Check,
+  X,
+  ShieldAlert,
+  CheckSquare,
+  RefreshCcw,
+  DollarSign,
+  Award,
+} from "lucide-react";
 import { User as DbUser } from "../db";
 
 interface BuyerPanelProps {
@@ -13,17 +26,21 @@ interface BuyerPanelProps {
   isAuthenticated: boolean;
 }
 
-export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthenticated }) => {
+export const BuyerPanel: React.FC<BuyerPanelProps> = ({
+  activeUser,
+  isAuthenticated,
+}) => {
   const { data, write, appDate } = useData();
   const [showAddBuyerForm, setShowAddBuyerForm] = useState(false);
-  const [showCollectionForm, setShowCollectionForm] = useState(false);
 
   // New Buyer Form States
   const [buyerNickname, setBuyerNickname] = useState("");
   const [creditLimit, setCreditLimit] = useState("");
 
   // Selected Buyer details and edit state
-  const [selectedBuyerId, setSelectedBuyerId] = useState<string | number | null>(null);
+  const [selectedBuyerId, setSelectedBuyerId] = useState<
+    string | number | null
+  >(null);
   const [editNickname, setEditNickname] = useState("");
   const [editMobile, setEditMobile] = useState("");
   const [editCreditLimit, setEditCreditLimit] = useState("");
@@ -42,22 +59,6 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
   const [searchQuery, setSearchQuery] = useState("");
 
   const buyers = data?.buyers || [];
-  const dailyCollections = [...(data?.daily_collections || [])].sort((a, b) => {
-    // Determine priority for approval
-    const aNeedsApproval = !a.is_approved && (a.amount_paid > 0 || a.is_rolled_over);
-    const bNeedsApproval = !b.is_approved && (b.amount_paid > 0 || b.is_rolled_over);
-    
-    if (aNeedsApproval && !bNeedsApproval) return -1;
-    if (!aNeedsApproval && bNeedsApproval) return 1;
-
-    // Then alphabetical
-    const aBuyer = data?.buyers?.find((buy) => String(buy.id) === String(a.buyer_id));
-    const bBuyer = data?.buyers?.find((buy) => String(buy.id) === String(b.buyer_id));
-    const aName = aBuyer ? (aBuyer.nickname || "").toLowerCase() : String(a.buyer_id);
-    const bName = bBuyer ? (bBuyer.nickname || "").toLowerCase() : String(b.buyer_id);
-    
-    return aName.localeCompare(bName);
-  });
 
   const handleAddBuyer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,94 +77,6 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
     setBuyerNickname("");
     setCreditLimit("");
     setShowAddBuyerForm(false);
-  };
-
-  const handleAddCollection = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!collectBuyerId || !collectAmount) return;
-
-    const amountNum = parseFloat(collectAmount);
-    
-    // Find outstanding transactions total to calculate owed total (or default to current debt)
-    const selectedBuyer = buyers.find((b) => String(b.id) === String(collectBuyerId));
-    if (!selectedBuyer) return;
-
-    // Check if there is already a collection entry for this buyer on this date
-    const existing = dailyCollections.find(
-      (c) => String(c.buyer_id) === String(collectBuyerId) && c.date === collectDate
-    );
-
-    if (existing) {
-      const updatedCollection = {
-        ...existing,
-        amount_paid: (existing.amount_paid || 0) + amountNum,
-      };
-      await write("daily_collections", "update", updatedCollection);
-    } else {
-      const newCollection = {
-        id: `temp_col_${Date.now()}`,
-        buyer_id: collectBuyerId,
-        date: collectDate,
-        total_owed_today: selectedBuyer.lifetime_debt,
-        amount_paid: amountNum,
-        is_rolled_over: false,
-        is_approved: false, // Default is false, requires admin review
-      };
-      await write("daily_collections", "insert", newCollection);
-    }
-
-    setCollectBuyerId("");
-    setCollectAmount("");
-    setShowCollectionForm(false);
-  };
-
-  const handleApproveCollection = async (colId: string | number) => {
-    if (!activeUser || isAuthenticated !== true || activeUser.role !== "admin") {
-      alert("Only authenticated Administrators can approve daily payment receipts!");
-      return;
-    }
-
-    const col = dailyCollections.find((c) => String(c.id) === String(colId));
-    if (!col) return;
-
-    // 1. Get associated buyer
-    const buyer = buyers.find((b) => String(b.id) === String(col.buyer_id));
-    if (buyer) {
-      // 2. Reduce the buyer's outstanding lifetime debt
-      const updatedBuyer = {
-        ...buyer,
-        lifetime_debt: Math.max(0, (buyer.lifetime_debt || 0) - (col.amount_paid || 0)),
-      };
-      await write("buyers", "update", updatedBuyer);
-    }
-
-    // 3. Mark the collection as approved
-    const updatedCollection = {
-      ...col,
-      is_approved: true,
-    };
-    await write("daily_collections", "update", updatedCollection);
-  };
-
-  const handleRolloverCollection = async (colId: string | number) => {
-    const col = dailyCollections.find((c) => c.id === colId);
-    if (!col) return;
-
-    // Check authority or prompt
-    if (activeUser?.role !== "admin") {
-      alert("Administrator privileges required to toggle rollover states.");
-      return;
-    }
-
-    const actionText = col.is_rolled_over ? "remove the rollover tag from" : "flag and rollover";
-    if (!window.confirm(`Are you sure you want to ${actionText} this collection?`)) return;
-
-    // Mark as rolled over to next ledger session
-    const updatedCollection = {
-      ...col,
-      is_rolled_over: !col.is_rolled_over,
-    };
-    await write("daily_collections", "update", updatedCollection);
   };
 
   const handleSelectBuyer = (b: any) => {
@@ -191,70 +104,106 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
   };
 
   // Filter, determine 'today' buyers, and sort
-  const todayBuyerIds = new Set((data?.transactions || []).filter(t => t.date === appDate).map(t => String(t.buyer_id)));
+  const todayBuyerIds = new Set(
+    (data?.transactions || [])
+      .filter((t) => t.date === appDate)
+      .map((t) => String(t.buyer_id)),
+  );
 
-  const filteredBuyers = buyers.filter((b) =>
-    b.nickname.toLowerCase().includes(searchQuery.toLowerCase())
-  ).sort((a, b) => {
-    const aToday = todayBuyerIds.has(String(a.id));
-    const bToday = todayBuyerIds.has(String(b.id));
-    if (aToday && !bToday) return -1;
-    if (!aToday && bToday) return 1;
-    return a.nickname.localeCompare(b.nickname);
-  });
+  const filteredBuyers = buyers
+    .filter((b) => b.nickname.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      const aToday = todayBuyerIds.has(String(a.id));
+      const bToday = todayBuyerIds.has(String(b.id));
+      if (aToday && !bToday) return -1;
+      if (!aToday && bToday) return 1;
+      return a.nickname.localeCompare(b.nickname);
+    });
 
   const scrollToLetter = (letter: string) => {
     const el = document.getElementById(`buyerlist-letter-${letter}`);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   // Derive active selected buyer variables
-  const selectedBuyer = buyers.find(x => String(x.id) === String(selectedBuyerId));
-  const buyerTxns = selectedBuyer 
-    ? (data?.transactions || []).filter(t => String(t.buyer_id) === String(selectedBuyer.id))
+  const selectedBuyer = buyers.find(
+    (x) => String(x.id) === String(selectedBuyerId),
+  );
+  const buyerTxns = selectedBuyer
+    ? (data?.transactions || []).filter(
+        (t) => String(t.buyer_id) === String(selectedBuyer.id),
+      )
     : [];
   const buyerCollections = selectedBuyer
-    ? (data?.daily_collections || []).filter(c => String(c.buyer_id) === String(selectedBuyer.id))
+    ? (data?.daily_collections || []).filter(
+        (c) => String(c.buyer_id) === String(selectedBuyer.id),
+      )
     : [];
 
-  const totalBoughtWeight = buyerTxns.reduce((sum, t) => sum + (t.weight || 0), 0);
-  const totalBoughtValue = buyerTxns.reduce((sum, t) => sum + (t.total_price || t.weight * t.price_per_kg || 0), 0);
+  const totalBoughtWeight = buyerTxns.reduce(
+    (sum, t) => sum + (t.weight || 0),
+    0,
+  );
+  const totalBoughtValue = buyerTxns.reduce(
+    (sum, t) => sum + (t.total_price || t.weight * t.price_per_kg || 0),
+    0,
+  );
   const totalPaidApproved = buyerCollections
-    .filter(c => c.is_approved)
+    .filter((c) => c.is_approved)
     .reduce((sum, c) => sum + (c.amount_paid || 0), 0);
 
-  const todayBoughtValue = buyerTxns.filter(t => t.date === appDate).reduce((sum, t) => sum + (t.total_price || t.weight * t.price_per_kg || 0), 0);
-  const todayPaidApproved = buyerCollections.filter(c => c.date === appDate && c.is_approved).reduce((sum, c) => sum + (c.amount_paid || 0), 0);
+  const todayBoughtValue = buyerTxns
+    .filter((t) => t.date === appDate)
+    .reduce(
+      (sum, t) => sum + (t.total_price || t.weight * t.price_per_kg || 0),
+      0,
+    );
+  const todayPaidApproved = buyerCollections
+    .filter((c) => c.date === appDate && c.is_approved)
+    .reduce((sum, c) => sum + (c.amount_paid || 0), 0);
   const todayOwed = Math.max(0, todayBoughtValue - todayPaidApproved);
 
+  const dailyCollections = (data?.daily_collections || []).filter(
+    (c: any) => c.date === appDate,
+  );
+
   const isAdmin = activeUser?.role === "admin" && isAuthenticated;
-  const isAuthorizedToCollect = isAuthenticated && (activeUser?.role === "admin" || activeUser?.role === "collector");
+  const isAuthorizedToCollect =
+    isAuthenticated &&
+    (activeUser?.role === "admin" || activeUser?.role === "collector");
 
   return (
     <div className="space-y-6" id="buyers-collections-panel">
       {/* Dynamic stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white border border-zinc-200 p-5 rounded-2xl flex items-center justify-between shadow-sm">
+        <div className="glass-panel border border-divider p-5 rounded-[24px] flex items-center justify-between shadow-sm">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-teal-50 text-teal-600 rounded-2xl">
+            <div className="p-3 bg-teal-50 text-teal-600 rounded-[24px]">
               <DollarSign className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xs text-zinc-500 font-medium font-sans">Total Outstanding Buyer Debts</div>
-              <div className="text-lg font-bold font-mono text-zinc-800">
-                ₹ {buyers.reduce((sum, b) => sum + (b.lifetime_debt || 0), 0).toLocaleString()}
+              <div className="text-xs text-faint font-medium font-sans">
+                Total Outstanding Buyer Debts
+              </div>
+              <div className="text-lg font-bold font-mono text-main">
+                ₹{" "}
+                {buyers
+                  .reduce((sum, b) => sum + (b.lifetime_debt || 0), 0)
+                  .toLocaleString()}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white border border-zinc-200 p-5 rounded-2xl flex items-center justify-between shadow-sm">
+        <div className="glass-panel border border-divider p-5 rounded-[24px] flex items-center justify-between shadow-sm">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
+            <div className="p-3 bg-amber-50 text-amber-600 rounded-[24px]">
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xs text-zinc-500 font-medium font-sans">Pending Approvals</div>
+              <div className="text-xs text-faint font-medium font-sans">
+                Pending Approvals
+              </div>
               <div className="text-lg font-bold font-mono text-amber-700">
                 {dailyCollections.filter((c) => !c.is_approved).length} Receipts
               </div>
@@ -264,58 +213,44 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
       </div>
 
       {/* Buyer actions block */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-zinc-50/80 backdrop-blur-sm border border-zinc-200/80 p-4 rounded-3xl shadow-sm">
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-panel-dark backdrop-blur-sm border border-divider/80 p-4 rounded-3xl shadow-sm">
         <div className="relative w-full sm:max-w-xs transition-all duration-300 focus-within:max-w-md">
-          <Search className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+          <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted" />
           <input
             type="text"
             placeholder="Search buyers..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-4 py-2.5 w-full text-sm text-zinc-700 bg-white border border-zinc-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow duration-200"
+            className="pl-10 pr-4 py-2.5 w-full text-sm text-main glass-panel border border-divider rounded-[24px] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow duration-200"
           />
         </div>
 
         <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full sm:w-auto">
-          {/* Collect Payment Button */}
-          <button
-            onClick={() => {
-              if (!isAuthorizedToCollect) {
-                alert("Your operator role does not have authorization to collection receipts! Swapping to Admin or Collector is required.");
-                return;
-              }
-              setShowCollectionForm(!showCollectionForm);
-              setShowAddBuyerForm(false);
-            }}
-            className={`flex-1 sm:flex-none px-5 py-2.5 text-sm font-semibold rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 ${
-              isAuthorizedToCollect
-                ? showCollectionForm ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/20"
-                : "bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed"
-            }`}
-            id="btn-log-collection"
-          >
-            {showCollectionForm ? <Check className="w-4 h-4" /> : <PlusCircle className="w-4 h-4" />}
-            Log Receipt
-          </button>
-
           {/* Add Buyer Button */}
           <button
             onClick={() => {
               if (!isAdmin) {
-                alert("Only authenticated Administrators can add system buyers!");
+                alert(
+                  "Only authenticated Administrators can add system buyers!",
+                );
                 return;
               }
               setShowAddBuyerForm(!showAddBuyerForm);
-              setShowCollectionForm(false);
             }}
-            className={`flex-1 sm:flex-none px-5 py-2.5 text-sm font-semibold rounded-2xl shadow-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 ${
+            className={`flex-1 sm:flex-none px-5 py-2.5 text-sm font-semibold rounded-[24px] shadow-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 ${
               isAdmin
-                ? showAddBuyerForm ? "bg-teal-50 text-teal-700 border border-teal-200" : "bg-zinc-800 hover:bg-zinc-900 text-white"
-                : "bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed"
+                ? showAddBuyerForm
+                  ? "bg-teal-50 text-teal-700 border border-teal-200"
+                  : "bg-panel-hover hover:glass-panel text-main"
+                : "bg-panel-hover text-muted border border-divider cursor-not-allowed"
             }`}
             id="btn-add-buyer"
           >
-            {showAddBuyerForm ? <Check className="w-4 h-4" /> : <PlusCircle className="w-4 h-4" />}
+            {showAddBuyerForm ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <PlusCircle className="w-4 h-4" />
+            )}
             Add Buyer
           </button>
         </div>
@@ -323,21 +258,30 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
 
       {/* Forms Drawer: Add Buyer */}
       {showAddBuyerForm && (
-        <form onSubmit={handleAddBuyer} className="bg-white border border-teal-100/50 relative p-6 rounded-3xl space-y-5 animate-slideDown shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <form
+          onSubmit={handleAddBuyer}
+          className="glass-panel border border-divider relative p-6 rounded-3xl space-y-5 animate-slideDown shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
+        >
           <div className="absolute top-0 right-0 p-4">
-             <button type="button" onClick={() => setShowAddBuyerForm(false)} className="text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"><X className="w-5 h-5"/></button>
+            <button
+              type="button"
+              onClick={() => setShowAddBuyerForm(false)}
+              className="text-muted hover:text-faint transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <div className="flex items-center gap-3 pb-3 border-b border-zinc-100">
+          <div className="flex items-center gap-3 pb-3 border-b border-divider">
             <div className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center text-teal-600">
               <User className="w-4 h-4" />
             </div>
-            <h4 className="text-sm font-extrabold uppercase tracking-[0.1em] text-zinc-800 font-sans">
+            <h4 className="text-sm font-extrabold uppercase tracking-[0.1em] text-main font-sans">
               Register New Buyer Profile
             </h4>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-[11px] font-sans font-bold text-zinc-500 uppercase tracking-wider block">
+              <label className="text-[11px] font-sans font-bold text-faint uppercase tracking-wider block">
                 Buyer Name <span className="text-rose-500">*</span>
               </label>
               <input
@@ -346,23 +290,25 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
                 onChange={(e) => setBuyerNickname(e.target.value)}
                 placeholder="e.g. Moni Fish Co."
                 required
-                className="w-full text-sm text-zinc-800 bg-zinc-50/50 border border-zinc-200 rounded-2xl p-3 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all placeholder:text-zinc-400"
+                className="w-full text-sm text-main bg-panel-dark border border-divider rounded-[24px] p-3 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all placeholder:text-muted"
                 id="form-buyer-name"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[11px] font-sans font-bold text-zinc-500 uppercase tracking-wider block">
+              <label className="text-[11px] font-sans font-bold text-faint uppercase tracking-wider block">
                 Credit Limit (INR) <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-3 text-zinc-400 font-medium">₹</span>
+                <span className="absolute left-4 top-3 text-muted font-medium">
+                  ₹
+                </span>
                 <input
                   type="number"
                   value={creditLimit}
                   onChange={(e) => setCreditLimit(e.target.value)}
                   placeholder="150000"
                   required
-                  className="w-full text-sm font-mono text-zinc-800 bg-zinc-50/50 border border-zinc-200 rounded-2xl py-3 pl-8 pr-4 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all placeholder:text-zinc-400"
+                  className="w-full text-sm font-mono text-main bg-panel-dark border border-divider rounded-[24px] py-3 pl-8 pr-4 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all placeholder:text-muted"
                   id="form-buyer-credit"
                 />
               </div>
@@ -371,7 +317,7 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
           <div className="flex justify-end pt-3">
             <button
               type="submit"
-              className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-sm font-bold rounded-xl shadow-lg shadow-teal-500/30 transition-all duration-200 cursor-pointer flex items-center gap-2"
+              className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-main text-sm font-bold rounded-[16px] shadow-lg shadow-teal-500/30 transition-all duration-200 cursor-pointer flex items-center gap-2"
               id="btn-save-buyer"
             >
               <Check className="w-4 h-4" /> Save Profile
@@ -380,158 +326,106 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
         </form>
       )}
 
-      {/* Forms Drawer: Log Daily Collection Payment */}
-      {showCollectionForm && (
-        <form onSubmit={handleAddCollection} className="bg-white border border-amber-100/50 relative p-6 rounded-3xl space-y-5 animate-slideDown shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <div className="absolute top-0 right-0 p-4">
-             <button type="button" onClick={() => setShowCollectionForm(false)} className="text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"><X className="w-5 h-5"/></button>
-          </div>
-          <div className="flex items-center gap-3 pb-3 border-b border-zinc-100">
-            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
-              <DollarSign className="w-4 h-4" />
-            </div>
-            <h4 className="text-sm font-extrabold uppercase tracking-[0.1em] text-zinc-800 font-sans">
-              Log Collection Receipt
-            </h4>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <label className="text-[11px] font-sans font-bold text-zinc-500 uppercase tracking-wider block">
-                Select Buyer <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={collectBuyerId}
-                onChange={(e) => setCollectBuyerId(e.target.value)}
-                required
-                className="w-full text-sm text-zinc-800 bg-zinc-50/50 border border-zinc-200 rounded-2xl p-3 outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all appearance-none cursor-pointer"
-                id="form-collect-buyer-select"
-              >
-                <option value="">Choose profile...</option>
-                {buyers.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.nickname} (Due: ₹{b.lifetime_debt.toLocaleString()})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[11px] font-sans font-bold text-zinc-500 uppercase tracking-wider block">
-                Amount Collected <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-3 text-zinc-400 font-medium">₹</span>
-                <input
-                  type="number"
-                  value={collectAmount}
-                  onChange={(e) => setCollectAmount(e.target.value)}
-                  placeholder="25000"
-                  required
-                  className="w-full text-sm font-mono text-zinc-800 bg-zinc-50/50 border border-zinc-200 rounded-2xl py-3 pl-8 pr-4 outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all placeholder:text-zinc-400"
-                  id="form-collect-amount"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[11px] font-sans font-bold text-zinc-500 uppercase tracking-wider block">
-                Deposit Date
-              </label>
-              <input
-                type="date"
-                value={collectDate}
-                onChange={(e) => setCollectDate(e.target.value)}
-                className="w-full text-sm text-zinc-800 bg-zinc-50/50 border border-zinc-200 rounded-2xl p-3 outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end pt-3">
-            <button
-              type="submit"
-              className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-sm font-bold rounded-xl shadow-lg shadow-amber-500/30 transition-all duration-200 cursor-pointer flex items-center gap-2"
-              id="btn-save-collection"
-            >
-              <Check className="w-4 h-4" /> Save Receipt
-            </button>
-          </div>
-        </form>
-      )}
-
       {/* Main Content stacked */}
       <div className="flex flex-col gap-6 w-full">
         {/* Buyer List Panel - Full width */}
-        <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm flex flex-col w-full">
-          <div className="px-5 py-4 bg-zinc-50 border-b border-zinc-200">
-            <h4 className="font-sans font-bold text-xs uppercase tracking-wider text-zinc-700">
+        <div className="glass-panel border border-divider rounded-[24px] overflow-hidden shadow-sm flex flex-col w-full">
+          <div className="px-5 py-4 glass-panel border-b border-divider">
+            <h4 className="font-sans font-bold text-xs uppercase tracking-wider text-main">
               Arat Buyers Accounts
             </h4>
           </div>
           <div className="divide-y divide-zinc-100 flex-grow max-h-[500px] overflow-y-auto relative pr-6 custom-scrollbar">
             {filteredBuyers.length === 0 ? (
-              <div className="p-8 text-center text-zinc-400 text-xs">
+              <div className="p-8 text-center text-muted text-xs">
                 No buyers found.
               </div>
             ) : (
               filteredBuyers.map((b, index, arr) => {
-                const percentage = Math.min(100, Math.round(((b.lifetime_debt || 0) / (b.credit_limit || 1)) * 100));
+                const percentage = Math.min(
+                  100,
+                  Math.round(
+                    ((b.lifetime_debt || 0) / (b.credit_limit || 1)) * 100,
+                  ),
+                );
                 const limitWarning = percentage > 85;
                 const isSelected = b.id === selectedBuyerId;
                 const isToday = todayBuyerIds.has(String(b.id));
-                const isFirstOfInitial = index === 0 || b.nickname[0].toUpperCase() !== arr[index - 1].nickname[0].toUpperCase();
+                const isFirstOfInitial =
+                  index === 0 ||
+                  b.nickname[0].toUpperCase() !==
+                    arr[index - 1].nickname[0].toUpperCase();
 
                 return (
                   <React.Fragment key={b.id}>
                     {isFirstOfInitial && !isToday && (
-                       <div id={`buyerlist-letter-${b.nickname[0].toUpperCase()}`} className="px-5 py-1 text-zinc-500 font-bold text-[10px] bg-zinc-50 border-b border-zinc-200">
-                         {b.nickname[0].toUpperCase()}
-                       </div>
+                      <div
+                        id={`buyerlist-letter-${b.nickname[0].toUpperCase()}`}
+                        className="px-5 py-1 text-faint font-bold text-[10px] glass-panel border-b border-divider"
+                      >
+                        {b.nickname[0].toUpperCase()}
+                      </div>
                     )}
-                  <div
-                    onClick={() => handleSelectBuyer(b)}
-                    className={`p-4 transition duration-150 space-y-2 cursor-pointer border-l-4 ${
-                      isSelected
-                        ? "bg-teal-50/40 border-teal-600 font-semibold"
-                        : isToday ? "bg-teal-900/5 hover:bg-teal-900/10 border-l-transparent" : "hover:bg-zinc-50 border-l-transparent"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center font-bold text-xs">
-                          {b.nickname.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold text-zinc-800 flex items-center gap-2">
-                            {b.nickname}
-                            {isToday && <span className="bg-teal-500 text-teal-950 text-[8px] px-1.5 font-bold rounded-sm uppercase tracking-wider">Today</span>}
+                    <div
+                      onClick={() => handleSelectBuyer(b)}
+                      className={`p-4 transition duration-150 space-y-2 cursor-pointer border-l-4 ${
+                        isSelected
+                          ? "bg-teal-50/40 border-teal-600 font-semibold"
+                          : isToday
+                            ? "bg-teal-900/5 hover:bg-teal-900/10 border-l-transparent"
+                            : "hover:glass-panel border-l-transparent"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 bg-teal-50 text-teal-600 rounded-[24px] flex items-center justify-center font-bold text-xs">
+                            {b.nickname.charAt(0)}
                           </div>
-                          <div className="text-[10px] text-zinc-500 font-mono">ID: {String(b.id).substring(0, 8)}</div>
+                          <div>
+                            <div className="text-xs font-bold text-main flex items-center gap-2">
+                              {b.nickname}
+                              {isToday && (
+                                <span className="bg-teal-500 text-teal-950 text-[8px] px-1.5 font-bold rounded-sm uppercase tracking-wider">
+                                  Today
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-faint font-mono">
+                              ID: {String(b.id).substring(0, 8)}
+                            </div>
+                          </div>
                         </div>
+                        <span className="text-xs font-bold text-main font-mono">
+                          ₹ {b.lifetime_debt.toLocaleString()}
+                        </span>
                       </div>
-                      <span className="text-xs font-bold text-zinc-800 font-mono">
-                        ₹ {b.lifetime_debt.toLocaleString()}
-                      </span>
-                    </div>
 
-                    {/* Credit Gauge bar */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[9px] text-zinc-500 uppercase tracking-wider font-semibold">
-                        <span>Debt Ratio: {percentage}%</span>
-                        <span>Limit: ₹{b.credit_limit.toLocaleString()}</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
-                        <div
-                          style={{ width: `${percentage}%` }}
-                          className={`h-full rounded-full transition-all duration-300 ${
-                            limitWarning ? "bg-rose-500 font-bold" : "bg-teal-500"
-                          }`}
-                        ></div>
-                      </div>
-                      {limitWarning && (
-                        <div className="text-[9px] text-rose-500 font-semibold flex items-center gap-1">
-                          <ShieldAlert className="w-3 h-3 text-rose-500 shrink-0" />
-                          <span>Close to credit ceiling limit! Lock sales.</span>
+                      {/* Credit Gauge bar */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[9px] text-faint uppercase tracking-wider font-semibold">
+                          <span>Debt Ratio: {percentage}%</span>
+                          <span>Limit: ₹{b.credit_limit.toLocaleString()}</span>
                         </div>
-                      )}
+                        <div className="h-1.5 w-full bg-panel-hover rounded-full overflow-hidden">
+                          <div
+                            style={{ width: `${percentage}%` }}
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              limitWarning
+                                ? "bg-rose-500 font-bold"
+                                : "bg-teal-500"
+                            }`}
+                          ></div>
+                        </div>
+                        {limitWarning && (
+                          <div className="text-[9px] text-rose-500 font-semibold flex items-center gap-1">
+                            <ShieldAlert className="w-3 h-3 text-rose-500 shrink-0" />
+                            <span>
+                              Close to credit ceiling limit! Lock sales.
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
                   </React.Fragment>
                 );
               })
@@ -539,11 +433,14 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
 
             {/* A-Z fast scroller */}
             {filteredBuyers.length > 0 && (
-              <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center text-[9px] font-bold text-zinc-400 gap-0.5 z-10 p-1 bg-white/50 backdrop-blur-sm">
-                {Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ").map(letter => (
-                  <div 
-                    key={letter} 
-                    onClick={(e) => { e.stopPropagation(); scrollToLetter(letter); }}
+              <div className="absolute right-1 top-0 bottom-0 flex flex-col justify-center text-[9px] font-bold text-muted gap-0.5 z-10 p-1 bg-panel-dark backdrop-blur-sm">
+                {Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ").map((letter) => (
+                  <div
+                    key={letter}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      scrollToLetter(letter);
+                    }}
                     className="cursor-pointer hover:text-teal-600 hover:scale-125 transition-transform text-center"
                   >
                     {letter}
@@ -556,19 +453,21 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
 
         {/* Conditional stacked detail view vs selected buyer ledger */}
         {selectedBuyerId && selectedBuyer ? (
-          <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm flex flex-col animate-scaleUp w-full">
+          <div className="glass-panel border border-divider rounded-[24px] overflow-hidden shadow-sm flex flex-col animate-scaleUp w-full">
             {/* Dossier Header */}
-            <div className="px-5 py-4 bg-zinc-50 border-b border-zinc-200 flex justify-between items-center select-none">
+            <div className="px-5 py-4 glass-panel border-b border-divider flex justify-between items-center select-none">
               <div>
-                <h4 className="font-sans font-bold text-xs uppercase tracking-wider text-zinc-700">
+                <h4 className="font-sans font-bold text-xs uppercase tracking-wider text-main">
                   Client Profile: {selectedBuyer.nickname}
                 </h4>
-                <p className="text-[10px] text-zinc-400 font-mono">Member ID: {selectedBuyer.id}</p>
+                <p className="text-[10px] text-muted font-mono">
+                  Member ID: {selectedBuyer.id}
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedBuyerId(null)}
-                className="px-3 py-1.5 text-[10.5px] uppercase font-bold bg-zinc-200 hover:bg-zinc-300 text-zinc-700 rounded-2xl transition shrink-0 select-none cursor-pointer flex items-center gap-1"
+                className="px-3 py-1.5 text-[10.5px] uppercase font-bold bg-panel-dark hover:bg-panel-dark text-main rounded-[24px] transition shrink-0 select-none cursor-pointer flex items-center gap-1"
               >
                 ← Back to ledger
               </button>
@@ -576,17 +475,22 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
 
             <div className="p-5 space-y-6 overflow-y-auto max-h-[600px] custom-scrollbar">
               {/* Profile Fields form for Admin info */}
-              <form onSubmit={handleSaveBuyerDetails} className="bg-white border border-zinc-200 p-5 rounded-3xl space-y-5 shadow-sm">
-                <div className="border-b border-zinc-100 pb-3 flex justify-between items-center select-none">
+              <form
+                onSubmit={handleSaveBuyerDetails}
+                className="glass-panel border border-divider p-5 rounded-3xl space-y-5 shadow-sm"
+              >
+                <div className="border-b border-divider pb-3 flex justify-between items-center select-none">
                   <h5 className="text-[11px] font-black uppercase tracking-widest text-teal-800 flex items-center gap-1.5">
                     <User className="w-4 h-4 text-teal-600" /> Buyer Information
                   </h5>
-                  <span className="text-[9px] font-black text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full border border-zinc-200 font-sans tracking-wide">ADMIN EDIT</span>
+                  <span className="text-[9px] font-black text-muted bg-panel-hover px-2 py-0.5 rounded-full border border-divider font-sans tracking-wide">
+                    ADMIN EDIT
+                  </span>
                 </div>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-sans font-bold text-zinc-500 uppercase tracking-widest block select-none">
+                    <label className="text-[10px] font-sans font-bold text-faint uppercase tracking-widest block select-none">
                       Name (নাম)
                     </label>
                     <input
@@ -594,11 +498,11 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
                       value={editNickname}
                       onChange={(e) => setEditNickname(e.target.value)}
                       placeholder="Haji Mohammad Ali"
-                      className="w-full text-sm text-zinc-800 bg-zinc-50/50 border border-zinc-200 rounded-2xl p-3 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all font-sans placeholder:text-zinc-400"
+                      className="w-full text-sm text-main bg-panel-dark border border-divider rounded-[24px] p-3 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all font-sans placeholder:text-muted"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-sans font-bold text-zinc-500 uppercase tracking-widest block select-none">
+                    <label className="text-[10px] font-sans font-bold text-faint uppercase tracking-widest block select-none">
                       Mobile Number (মোবাইল)
                     </label>
                     <input
@@ -606,29 +510,31 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
                       value={editMobile}
                       onChange={(e) => setEditMobile(e.target.value)}
                       placeholder="+880 1888-999000"
-                      className="w-full text-sm font-mono text-zinc-800 bg-zinc-50/50 border border-zinc-200 rounded-2xl p-3 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all placeholder:text-zinc-400"
+                      className="w-full text-sm font-mono text-main bg-panel-dark border border-divider rounded-[24px] p-3 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all placeholder:text-muted"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-end pt-2">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-sans font-bold text-zinc-500 uppercase tracking-widest block select-none">
+                    <label className="text-[10px] font-sans font-bold text-faint uppercase tracking-widest block select-none">
                       Credit Limit (ঋণ সীমা)
                     </label>
                     <div className="relative">
-                      <span className="absolute left-4 top-3 text-zinc-400 font-medium">₹</span>
+                      <span className="absolute left-4 top-3 text-muted font-medium">
+                        ₹
+                      </span>
                       <input
                         type="number"
                         value={editCreditLimit}
                         onChange={(e) => setEditCreditLimit(e.target.value)}
-                        className="w-full text-sm font-mono text-zinc-800 bg-zinc-50/50 border border-zinc-200 rounded-2xl py-3 pl-8 pr-4 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all placeholder:text-zinc-400"
+                        className="w-full text-sm font-mono text-main bg-panel-dark border border-divider rounded-[24px] py-3 pl-8 pr-4 outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-all placeholder:text-muted"
                       />
                     </div>
                   </div>
                   <button
                     type="submit"
-                    className="w-full px-5 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl text-xs font-black tracking-wide cursor-pointer shadow-lg shadow-teal-500/20 active:scale-95 transition-all text-center flex items-center justify-center gap-1.5 select-none"
+                    className="w-full px-5 py-3 bg-teal-600 hover:bg-teal-700 text-main rounded-[24px] text-xs font-black tracking-wide cursor-pointer shadow-lg shadow-teal-500/20 active:scale-95 transition-all text-center flex items-center justify-center gap-1.5 select-none"
                   >
                     <Check className="w-4 h-4" /> Save Profile Details
                   </button>
@@ -637,39 +543,61 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
 
               {/* Statistics Grid */}
               <div className="grid grid-cols-2 gap-3 select-none">
-                <div className="bg-rose-50/10 border border-rose-150 p-3 rounded-2xl flex flex-col justify-between">
-                  <span className="text-[9px] text-rose-500 block font-semibold uppercase tracking-wider font-sans">Owe Us For Today</span>
+                <div className="bg-rose-50/10 border border-rose-150 p-3 rounded-[24px] flex flex-col justify-between">
+                  <span className="text-[9px] text-rose-500 block font-semibold uppercase tracking-wider font-sans">
+                    Owe Us For Today
+                  </span>
                   <span className="text-sm font-bold font-mono text-rose-600 block mt-1">
                     ₹{Math.round(todayOwed).toLocaleString()}
                   </span>
                 </div>
-                <div className="bg-rose-50/10 border border-rose-150 p-3 rounded-2xl flex flex-col justify-between">
-                  <span className="text-[9px] text-rose-500 block font-semibold uppercase tracking-wider font-sans">Outstanding Debt (Ledger)</span>
+                <div className="bg-rose-50/10 border border-rose-150 p-3 rounded-[24px] flex flex-col justify-between">
+                  <span className="text-[9px] text-rose-500 block font-semibold uppercase tracking-wider font-sans">
+                    Outstanding Debt (Ledger)
+                  </span>
                   <span className="text-sm font-bold font-mono text-rose-600 block mt-1">
-                    ₹{Math.round(selectedBuyer.lifetime_debt || 0).toLocaleString()}
+                    ₹
+                    {Math.round(
+                      selectedBuyer.lifetime_debt || 0,
+                    ).toLocaleString()}
                   </span>
                 </div>
               </div>
 
               {/* Purchase History */}
               <div className="space-y-2">
-                <h5 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-700 border-b border-zinc-150 pb-1.5 flex justify-between items-center font-sans select-none">
+                <h5 className="text-[11px] font-extrabold uppercase tracking-wider text-main border-b border-zinc-150 pb-1.5 flex justify-between items-center font-sans select-none">
                   <span>Recent Auction Records</span>
-                  <span className="text-[9px] text-zinc-400 font-normal select-none">Total {buyerTxns.length} entries</span>
+                  <span className="text-[9px] text-muted font-normal select-none">
+                    Total {buyerTxns.length} entries
+                  </span>
                 </h5>
-                <div className="max-h-[160px] overflow-y-auto border border-zinc-200 rounded-2xl divide-y divide-zinc-100 custom-scrollbar">
+                <div className="max-h-[160px] overflow-y-auto border border-divider rounded-[24px] divide-y divide-zinc-100 custom-scrollbar">
                   {buyerTxns.length === 0 ? (
-                    <div className="p-6 text-center text-zinc-400 text-xs py-8 select-none">No fish purchased in recent auctions.</div>
+                    <div className="p-6 text-center text-muted text-xs py-8 select-none">
+                      No fish purchased in recent auctions.
+                    </div>
                   ) : (
                     [...buyerTxns].reverse().map((t) => (
-                      <div key={t.id} className="p-2.5 px-3 flex justify-between items-center text-xs font-sans hover:bg-zinc-50/50">
+                      <div
+                        key={t.id}
+                        className="p-2.5 px-3 flex justify-between items-center text-xs font-sans hover:bg-panel-dark"
+                      >
                         <div>
-                          <div className="font-bold text-zinc-800 font-sans">{t.fish_type}</div>
-                          <div className="text-[9.5px] text-zinc-500 font-mono">Date: {t.date}</div>
+                          <div className="font-bold text-main font-sans">
+                            {t.fish_type}
+                          </div>
+                          <div className="text-[9.5px] text-faint font-mono">
+                            Date: {t.date}
+                          </div>
                         </div>
                         <div className="text-right font-mono">
-                          <div className="font-mono font-bold text-zinc-800">₹{t.total_price.toLocaleString()}</div>
-                          <div className="text-[9.5px] text-zinc-500 font-mono">{t.weight} kg @ ₹{t.price_per_kg}/kg</div>
+                          <div className="font-mono font-bold text-main">
+                            ₹{t.total_price.toLocaleString()}
+                          </div>
+                          <div className="text-[9.5px] text-faint font-mono">
+                            {t.weight} kg @ ₹{t.price_per_kg}/kg
+                          </div>
                         </div>
                       </div>
                     ))
@@ -680,24 +608,24 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
               {/* Collections History HIDDEN AS REQUESTED */}
               {/*
               <div className="space-y-2">
-                <h5 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-700 border-b border-zinc-150 pb-1.5 flex justify-between items-center font-sans select-none">
+                <h5 className="text-[11px] font-extrabold uppercase tracking-wider text-main border-b border-zinc-150 pb-1.5 flex justify-between items-center font-sans select-none">
                   <span>Receipts & Daily Collections Log</span>
-                  <span className="text-[9px] text-zinc-400 font-normal select-none font-sans font-sans">Total {buyerCollections.length} pays</span>
+                  <span className="text-[9px] text-muted font-normal select-none font-sans font-sans">Total {buyerCollections.length} pays</span>
                 </h5>
-                <div className="max-h-[160px] overflow-y-auto border border-zinc-200 rounded-2xl divide-y divide-zinc-100 custom-scrollbar font-sans">
+                <div className="max-h-[160px] overflow-y-auto border border-divider rounded-[24px] divide-y divide-zinc-100 custom-scrollbar font-sans">
                   {buyerCollections.length === 0 ? (
-                    <div className="p-6 text-center text-zinc-400 text-xs py-8 font-sans select-none">No collections registered for this buyer.</div>
+                    <div className="p-6 text-center text-muted text-xs py-8 font-sans select-none">No collections registered for this buyer.</div>
                   ) : (
                     [...buyerCollections].reverse().map((col) => (
-                      <div key={col.id} className="p-2.5 px-3 flex justify-between items-center text-xs hover:bg-zinc-50/50 font-sans">
+                      <div key={col.id} className="p-2.5 px-3 flex justify-between items-center text-xs hover:bg-panel-dark font-sans">
                         <div>
-                          <span className="text-[9.5px] text-zinc-400 font-mono block select-none">{col.date}</span>
-                          <span className={`text-[10px] font-bold block ${col.is_approved ? "text-teal-600" : col.is_rolled_over ? "text-amber-500" : "text-zinc-500"}`}>
+                          <span className="text-[9.5px] text-muted font-mono block select-none">{col.date}</span>
+                          <span className={`text-[10px] font-bold block ${col.is_approved ? "text-teal-600" : col.is_rolled_over ? "text-amber-500" : "text-faint"}`}>
                             {col.is_approved ? "✅ Approved by Admin" : col.is_rolled_over ? "🔁 Rolled Over in Session" : "⏳ Pending review"}
                           </span>
                         </div>
                         <div className="text-right">
-                          <span className="font-bold font-mono text-zinc-800 text-emerald-800">₹{col.amount_paid.toLocaleString()}</span>
+                          <span className="font-bold font-mono text-main text-emerald-800">₹{col.amount_paid.toLocaleString()}</span>
                         </div>
                       </div>
                     ))
@@ -705,105 +633,9 @@ export const BuyerPanel: React.FC<BuyerPanelProps> = ({ activeUser, isAuthentica
                 </div>
               </div>
               */}
-
             </div>
           </div>
-        ) : (
-          /* Collections Ledger - Full width stack aspect */
-          <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm flex flex-col w-full">
-            <div className="px-5 py-4 bg-zinc-50 border-b border-zinc-200 flex justify-between items-center">
-              <h4 className="font-sans font-bold text-xs uppercase tracking-wider text-zinc-700">
-                Daily collections Ledger (Halkhata Receipts)
-              </h4>
-              <span className="text-[10px] bg-amber-500/10 text-amber-700 border border-amber-500/20 px-2 py-0.5 rounded-full font-medium">
-                Collector Active
-              </span>
-            </div>
-
-            <div className="divide-y divide-zinc-100 flex-grow max-h-[500px] overflow-y-auto">
-              {dailyCollections.length === 0 ? (
-                <div className="p-12 text-center text-zinc-400 text-xs">
-                  No collections logged. Write a collection payment above to review ledger entries.
-                </div>
-              ) : (
-                dailyCollections.map((col) => {
-                  const buyer = buyers.find((b) => String(b.id) === String(col.buyer_id));
-                  const isTemp = String(col.id).startsWith("temp_");
-
-                  return (
-                    <div key={col.id} className={`p-4 transition duration-150 border-l-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 ${
-                      col.is_approved 
-                        ? "border-emerald-500 bg-emerald-50/5" 
-                        : col.is_rolled_over 
-                        ? "border-amber-500 bg-amber-50/5" 
-                        : "border-zinc-300 bg-white"
-                    }`}>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-zinc-800">
-                            {buyer ? buyer.nickname : `Buyer (#${col.buyer_id})`}
-                          </span>
-                          <span className="text-[10px] text-zinc-400 font-mono">
-                            {col.date}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-x-4 text-[11px] font-mono text-zinc-600">
-                          <div>Owed today: ₹{col.total_owed_today.toLocaleString()}</div>
-                          <div className="font-bold text-teal-800">Paid: ₹{(col.amount_paid || 0).toLocaleString()}</div>
-                        </div>
-                        {isTemp && (
-                          <span className="text-[8px] bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.2 rounded font-sans uppercase font-bold tracking-wider">
-                            Pending Sync
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Action controls based on Operator Permissions */}
-                      <div className="flex items-center gap-2 shrink-0">
-                        {/* Rollover Toggle */}
-                        <button
-                          onClick={() => handleRolloverCollection(col.id)}
-                          className={`p-2.5 rounded-2xl border text-xs font-semibold flex items-center gap-1 cursor-pointer transition ${
-                            col.is_rolled_over
-                              ? "bg-amber-950/15 border-amber-900/30 text-amber-700"
-                              : "bg-zinc-50 border-zinc-200 text-zinc-600 hover:bg-zinc-100"
-                          }`}
-                          title="Toggle Rollover (Transfer outstanding to next segment)"
-                        >
-                          <RefreshCcw className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">
-                            {col.is_rolled_over ? "Rolled Over" : "Rollover"}
-                          </span>
-                        </button>
-
-                        {/* Admin Approve badge or Action */}
-                        {col.is_approved ? (
-                          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl px-3 py-1.5 text-xs font-bold flex items-center gap-1">
-                            <Check className="w-4 h-4 text-emerald-600" />
-                            <span>Approved</span>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleApproveCollection(col.id)}
-                            className={`px-3 py-1.5 text-xs font-bold rounded-2xl cursor-pointer flex items-center gap-1 shadow-sm transition border ${
-                              isAdmin
-                                ? "bg-emerald-600 border-emerald-700 text-white hover:bg-emerald-700"
-                                : "bg-zinc-50 border-zinc-200 text-zinc-405 hover:bg-zinc-100 cursor-help"
-                            }`}
-                            title={isAdmin ? "Approve & update buyers credit totals" : "Approved status requires Admin Operator authentication."}
-                          >
-                            <CheckSquare className="w-3.5 h-3.5" />
-                            <span>Approve Receipt</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

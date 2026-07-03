@@ -4,8 +4,16 @@
  */
 
 import React, { useState } from "react";
-import { useData } from "./DataContext";
-import { Wifi, WifiOff, RefreshCw, AlertTriangle, Database, Trash2, CheckCircle } from "lucide-react";
+import { useData } from "../contexts/DataContext";
+import {
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  AlertTriangle,
+  Database,
+  Trash2,
+  CheckCircle,
+} from "lucide-react";
 
 export const NetworkSimulator: React.FC = () => {
   const {
@@ -42,9 +50,12 @@ export const NetworkSimulator: React.FC = () => {
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg space-y-5 text-zinc-100" id="network-simulator-panel">
+    <div
+      className="glass-panel border border-divider rounded-[24px] p-5 shadow-lg space-y-5 text-main"
+      id="network-simulator-panel"
+    >
       {/* 1. Header with Network Status */}
-      <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+      <div className="flex items-center justify-between border-b border-divider pb-3">
         <div className="flex items-center space-x-2">
           {online ? (
             <div className="relative flex h-3 w-3">
@@ -54,21 +65,21 @@ export const NetworkSimulator: React.FC = () => {
           ) : (
             <div className="h-3 w-3 rounded-full bg-rose-500 animate-pulse"></div>
           )}
-          <h3 className="font-sans font-semibold text-sm tracking-wide uppercase text-zinc-300">
+          <h3 className="font-sans font-semibold text-sm tracking-wide uppercase text-main">
             Sync Engine Status
           </h3>
         </div>
-        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">
+        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-panel-hover text-muted">
           NFC-v1.0
         </span>
       </div>
 
       {/* 2. Connection Overview */}
       <div className="space-y-2 text-xs">
-        <div className="flex justify-between items-center bg-zinc-950/50 p-2.5 rounded-2xl border border-zinc-800">
-          <span className="text-zinc-400">Connection Engine:</span>
+        <div className="flex justify-between items-center glass-panel p-2.5 rounded-[24px] border border-divider">
+          <span className="text-muted">Connection Engine:</span>
           {online ? (
-            <span className="text-emerald-400 font-bold flex items-center gap-1 uppercase tracking-wider text-[10px]">
+            <span className="text-emerald-500 font-bold flex items-center gap-1 uppercase tracking-wider text-[10px]">
               ● Connected
             </span>
           ) : (
@@ -78,40 +89,62 @@ export const NetworkSimulator: React.FC = () => {
           )}
         </div>
 
-        <div className="flex justify-between items-center bg-zinc-950/50 p-2.5 rounded-2xl border border-zinc-800">
-          <span className="text-zinc-400">Sync Behavior:</span>
-          <span className="text-teal-500 text-teal-400 font-bold text-[10px] uppercase">Fully Automated</span>
+        <div className="flex justify-between items-center glass-panel p-2.5 rounded-[24px] border border-divider">
+          <span className="text-muted">Sync Behavior:</span>
+          <span className="text-teal-500 text-teal-500 font-bold text-[10px] uppercase">
+            Fully Automated
+          </span>
         </div>
 
-        <div className="flex justify-between items-center bg-zinc-950/50 p-2.5 rounded-2xl border border-zinc-800">
-          <span className="text-zinc-400">Server Remote:</span>
+        <div className="flex justify-between items-center glass-panel p-2.5 rounded-[24px] border border-divider">
+          <span className="text-muted">Server Remote:</span>
           {syncConfigured ? (
-            <span className="text-teal-400 flex items-center gap-1 font-mono">
-              <Database className="w-3.5 h-3.5" /> Supabase
+            <span className="text-teal-500 flex items-center gap-1 font-mono">
+              <Database className="w-3.5 h-3.5" /> Local Data
             </span>
           ) : (
-            <span className="text-yellow-500 flex items-center gap-1 font-mono hover:underline cursor-help" title="No env variables. Running client-side sandboxed.">
+            <span
+              className="text-yellow-500 flex items-center gap-1 font-mono hover:underline cursor-help"
+              title="No env variables. Running client-side sandboxed."
+            >
               <AlertTriangle className="w-3.5 h-3.5" /> Local-Demo
             </span>
           )}
         </div>
       </div>
 
-      <div className="bg-zinc-950/60 p-3 rounded-2xl border border-zinc-800 text-[11px] leading-relaxed text-zinc-500 text-zinc-400">
-        ✨ <strong>How it works</strong>: When you book transactions, collect money, or adjust records, the app saves everything locally and automatically checks if internet is active. Once connected, it automatically syncs the queue to the cloud server datasets. If you have no connection, it holds your records seamlessly!
+      <div className="glass-panel p-3 rounded-[24px] border border-divider text-[11px] leading-relaxed text-muted">
+        ✨ <strong>How it works</strong>: When you book transactions, collect
+        money, or adjust records, the app saves everything locally and
+        automatically checks if internet is active. Once connected, it
+        automatically syncs the queue to the cloud server datasets. If you have
+        no connection, it holds your records seamlessly!
       </div>
 
       {/* Sync result notification */}
       {syncResult && (
-        <div className={`p-3 rounded-2xl text-xs flex gap-2 border ${
-          syncResult.success 
-            ? "bg-emerald-950/30 text-emerald-400 border-emerald-900/30" 
-            : "bg-rose-950/30 text-rose-400 border-rose-900/30"
-        }`}>
-          {syncResult.success ? <CheckCircle className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+        <div
+          className={`p-3 rounded-[24px] text-xs flex gap-2 border ${
+            syncResult.success
+              ? "bg-emerald-950/30 text-emerald-500 border-emerald-900/30"
+              : "bg-rose-950/30 text-rose-500 border-rose-900/30"
+          }`}
+        >
+          {syncResult.success ? (
+            <CheckCircle className="w-4 h-4 shrink-0" />
+          ) : (
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+          )}
           <div>
-            <div className="font-semibold">{syncResult.success ? "Sync Finished!" : "Sync Encountered Issues"}</div>
-            <div>Processed: {syncResult.processed} item(s). Remaining: {syncResult.remaining} left in queue.</div>
+            <div className="font-semibold">
+              {syncResult.success
+                ? "Sync Finished!"
+                : "Sync Encountered Issues"}
+            </div>
+            <div>
+              Processed: {syncResult.processed} item(s). Remaining:{" "}
+              {syncResult.remaining} left in queue.
+            </div>
           </div>
         </div>
       )}
@@ -119,7 +152,7 @@ export const NetworkSimulator: React.FC = () => {
       {/* 4. Queue visual list */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="font-sans font-bold text-xs text-zinc-400 tracking-wider uppercase">
+          <span className="font-sans font-bold text-xs text-muted tracking-wider uppercase">
             Pending Queue ({queue.length})
           </span>
           {queue.length > 0 && !online && (
@@ -130,8 +163,8 @@ export const NetworkSimulator: React.FC = () => {
         </div>
 
         {queue.length === 0 ? (
-          <div className="text-center py-6 px-4 bg-zinc-950/30 rounded-2xl text-zinc-500 text-xs border border-dashed border-zinc-800">
-            <CheckCircle className="w-6 h-6 mx-auto mb-2 text-zinc-700" />
+          <div className="text-center py-6 px-4 glass-panel rounded-[24px] text-faint text-xs border border-dashed border-divider">
+            <CheckCircle className="w-6 h-6 mx-auto mb-2 text-main" />
             No pending writes in query queue. All entries are in sync.
           </div>
         ) : (
@@ -139,23 +172,32 @@ export const NetworkSimulator: React.FC = () => {
             {queue.map((item, index) => (
               <div
                 key={`${item.id}-${index}`}
-                className="bg-zinc-950 p-2.5 rounded-2xl border border-zinc-800 text-[11px] space-y-1"
+                className="glass-panel p-2.5 rounded-[24px] border border-divider text-[11px] space-y-1"
               >
-                <div className="flex justify-between items-center text-zinc-400">
-                  <span className="font-mono text-zinc-500 uppercase">
+                <div className="flex justify-between items-center text-muted">
+                  <span className="font-mono text-faint uppercase">
                     #{index + 1} • {item.table}
                   </span>
-                  <span className={`px-1 rounded uppercase font-mono text-[9px] ${
-                    item.action === "insert" ? "bg-emerald-950 text-emerald-400" :
-                    item.action === "update" ? "bg-blue-900/50 text-blue-300" :
-                    item.action === "delete" ? "bg-rose-950 text-rose-400" : "bg-purple-900/50 text-purple-300"
-                  }`}>
+                  <span
+                    className={`px-1 rounded uppercase font-mono text-[9px] ${
+                      item.action === "insert"
+                        ? "bg-emerald-950 text-emerald-500"
+                        : item.action === "update"
+                          ? "bg-blue-900/50 text-blue-300"
+                          : item.action === "delete"
+                            ? "bg-rose-950 text-rose-500"
+                            : "bg-purple-900/50 text-purple-300"
+                    }`}
+                  >
                     {item.action}
                   </span>
                 </div>
-                <div className="font-semibold text-zinc-200">
+                <div className="font-semibold text-main">
                   {item.table === "transactions" ? (
-                    <span>Fish Sale: {item.payload.fish_type} ({item.payload.weight}kg)</span>
+                    <span>
+                      Fish Sale: {item.payload.fish_type} ({item.payload.weight}
+                      kg)
+                    </span>
                   ) : item.table === "buyers" ? (
                     <span>Buyer: {item.payload.nickname}</span>
                   ) : item.table === "sources" ? (
@@ -163,10 +205,13 @@ export const NetworkSimulator: React.FC = () => {
                   ) : item.table === "daily_collections" ? (
                     <span>Collection: ₹{item.payload.amount_paid}</span>
                   ) : (
-                    <span>Payload: {JSON.stringify(item.payload).substring(0, 45)}...</span>
+                    <span>
+                      Payload: {JSON.stringify(item.payload).substring(0, 45)}
+                      ...
+                    </span>
                   )}
                 </div>
-                <div className="text-[10px] text-zinc-500 font-mono flex justify-between">
+                <div className="text-[10px] text-faint font-mono flex justify-between">
                   <span>ID: {String(item.id).substring(0, 12)}</span>
                   <span>{new Date(item.timestamp).toLocaleTimeString()}</span>
                 </div>
@@ -177,15 +222,19 @@ export const NetworkSimulator: React.FC = () => {
       </div>
 
       {/* 5. Hard Reset Button */}
-      <div className="pt-2 border-t border-zinc-800 flex items-center justify-between text-[11px]">
-        <span className="text-zinc-500">Need a fresh start?</span>
+      <div className="pt-2 border-t border-divider flex items-center justify-between text-[11px]">
+        <span className="text-faint">Need a fresh start?</span>
         <button
           onClick={() => {
-            if (confirm("Are you sure you want to purge all offline state? This clears local databases and sync queues directly!")) {
+            if (
+              confirm(
+                "Are you sure you want to purge all offline state? This clears local databases and sync queues directly!",
+              )
+            ) {
               resetToDefault();
             }
           }}
-          className="text-zinc-500 hover:text-rose-400 flex items-center gap-1 transition duration-150 cursor-pointer"
+          className="text-faint hover:text-rose-500 flex items-center gap-1 transition duration-150 cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
           Purge Offline Cache
@@ -193,18 +242,27 @@ export const NetworkSimulator: React.FC = () => {
       </div>
 
       {!syncConfigured ? (
-        <div className="p-3 bg-teal-950/20 text-zinc-400 border border-teal-900/30 rounded-2xl text-[11px] leading-relaxed">
-          💡 <strong>Demo Mode Enabled</strong>: All reads & writes accumulate instantly in client's local storage and support optimistic layouts! To wire real Supabase persistence: configure your <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> credentials in your project secrets.
+        <div className="p-3 bg-teal-950/20 text-muted border border-teal-900/30 rounded-[24px] text-[11px] leading-relaxed">
+          💡 <strong>Demo Mode Enabled</strong>: All reads & writes accumulate
+          instantly in client's local storage and support optimistic layouts! To
+          wire real Local Data persistence: configure your{" "}
+          <code>VITE_Local Data_URL</code> and <code>VITE_Local Data_ANON_KEY</code>{" "}
+          credentials in your project secrets.
         </div>
       ) : (
-        <div className="p-3 bg-indigo-950/20 text-indigo-200 border border-indigo-900/40 rounded-2xl text-[11px] leading-relaxed space-y-2">
-          <div>🚀 <strong>Supabase Connected!</strong> Ensure your Supabase project has the correct tables created before data can sync perfectly.</div>
-          <div className="text-[10px] text-indigo-300">If your cloud database is newly created, run the initial table schema setup in your Supabase SQL Editor:
+        <div className="p-3 bg-indigo-950/20 text-indigo-200 border border-indigo-900/40 rounded-[24px] text-[11px] leading-relaxed space-y-2">
+          <div>
+            🚀 <strong>Local Data Connected!</strong> Ensure your Local Data project
+            has the correct tables created before data can sync perfectly.
           </div>
-          <textarea 
-             readOnly 
-             className="w-full h-40 bg-zinc-950 border border-zinc-800 text-zinc-400 p-2 text-[9px] font-mono rounded"
-             defaultValue={`-- Core Tables Setup
+          <div className="text-[10px] text-indigo-300">
+            If your cloud database is newly created, run the initial table
+            schema setup in your Local Data SQL Editor:
+          </div>
+          <textarea
+            readOnly
+            className="w-full h-40 glass-panel border border-divider text-muted p-2 text-[9px] font-mono rounded"
+            defaultValue={`-- Core Tables Setup
 CREATE TABLE IF NOT EXISTS users ( id TEXT PRIMARY KEY, name TEXT, pin TEXT, role TEXT );
 CREATE TABLE IF NOT EXISTS buyers ( id TEXT PRIMARY KEY, nickname TEXT, lifetime_debt NUMERIC, credit_limit NUMERIC );
 CREATE TABLE IF NOT EXISTS sources ( id TEXT PRIMARY KEY, name TEXT, rate_per_kg NUMERIC, date TEXT, is_completed BOOLEAN, is_archived BOOLEAN );
@@ -213,7 +271,7 @@ CREATE TABLE IF NOT EXISTS daily_collections ( id TEXT PRIMARY KEY, buyer_id TEX
 CREATE TABLE IF NOT EXISTS source_payments ( id TEXT PRIMARY KEY, source_id TEXT, date TEXT, total_kg NUMERIC, rate_per_kg NUMERIC, sale_total NUMERIC, amount_paid_to_source NUMERIC, commission NUMERIC, is_settled BOOLEAN, items_json TEXT );
 CREATE TABLE IF NOT EXISTS settings ( key TEXT PRIMARY KEY, value TEXT );
 
--- IMPORTANT FIX: Run this in your Supabase SQL Editor to add any missing columns!
+-- IMPORTANT FIX: Run this in your Local Data SQL Editor to add any missing columns!
 ALTER TABLE sources ADD COLUMN IF NOT EXISTS rate_per_kg NUMERIC;
 ALTER TABLE transactions ADD COLUMN IF NOT EXISTS weight NUMERIC;
 ALTER TABLE transactions ADD COLUMN IF NOT EXISTS price_per_kg NUMERIC;

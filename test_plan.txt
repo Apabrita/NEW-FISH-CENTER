@@ -1,0 +1,7 @@
+To fix this cleanly:
+1. Make print-sheet-canvas have p-[48px] and box-border.
+2. Make print-page-wrapper NOT have p-[48px] and w-[794px]. Instead make them w-full.
+3. In pdf.ts, for the chunked mode, DO NOT take screenshot of pageNode directly. 
+   Instead, take screenshot of isolateWrapper!
+   Because isolateWrapper is 794px wide, white bg, and we can set its padding to 48px!
+   Then isolateWrapper has the baked-in margins, exactly like legacy mode!

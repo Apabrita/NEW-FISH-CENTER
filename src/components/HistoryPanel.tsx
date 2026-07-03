@@ -5,7 +5,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useData } from "./DataContext";
+import { useData } from "../contexts/DataContext";
 import { User as DbUser } from "../db";
 import {
   FileCode,
@@ -19,7 +19,7 @@ import {
   HardDrive,
   Users,
   Activity,
-  Trash2
+  Trash2,
 } from "lucide-react";
 
 interface HistoryPanelProps {
@@ -33,7 +33,9 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
 }) => {
   const { data, queue, appDate } = useData();
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<"all" | "purchases" | "collections" | "settlements" | "crew">("all");
+  const [categoryFilter, setCategoryFilter] = useState<
+    "all" | "purchases" | "collections" | "settlements" | "crew"
+  >("all");
 
   const buyers = data?.buyers || [];
   const sources = data?.sources || [];
@@ -57,18 +59,37 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
 
   // 1. Gather auctions
   transactions.forEach((tx) => {
-    const buyer = buyers.find(b => String(b.id).trim().toLowerCase() === String(tx.buyer_id).trim().toLowerCase());
-    const buyerName = buyer ? buyer.nickname || (buyer as any).name || (buyer as any).fullname : (!String(tx.buyer_id).startsWith('temp_') ? tx.buyer_id : "Unknown");
-    const source = sources.find(s => String(s.id).trim().toLowerCase() === String(tx.source_id).trim().toLowerCase());
-    const sourceName = source ? source.name || (source as any).nickname : (!String(tx.source_id).startsWith('temp_') ? tx.source_id : "Unknown");
+    const buyer = buyers.find(
+      (b) =>
+        String(b.id).trim().toLowerCase() ===
+        String(tx.buyer_id).trim().toLowerCase(),
+    );
+    const buyerName = buyer
+      ? buyer.nickname || (buyer as any).name || (buyer as any).fullname
+      : !String(tx.buyer_id).startsWith("temp_")
+        ? tx.buyer_id
+        : "Unknown";
+    const source = sources.find(
+      (s) =>
+        String(s.id).trim().toLowerCase() ===
+        String(tx.source_id).trim().toLowerCase(),
+    );
+    const sourceName = source
+      ? source.name || (source as any).nickname
+      : !String(tx.source_id).startsWith("temp_")
+        ? tx.source_id
+        : "Unknown";
 
-    const isQueued = queue.some((q) => q.table === "transactions" && q.id === tx.id);
+    const isQueued = queue.some(
+      (q) => q.table === "transactions" && q.id === tx.id,
+    );
 
     masterHistoryLog.push({
       id: tx.id,
-      timestamp: tx.id && typeof tx.id === "string" && tx.id.startsWith("temp_t_") 
-        ? parseInt(tx.id.replace("temp_t_", "")) 
-        : new Date(tx.date).getTime() || Date.now() - 3600000,
+      timestamp:
+        tx.id && typeof tx.id === "string" && tx.id.startsWith("temp_t_")
+          ? parseInt(tx.id.replace("temp_t_", ""))
+          : new Date(tx.date).getTime() || Date.now() - 3600000,
       date: tx.date || appDate,
       category: "purchases",
       title: "Auction Transaction Registered",
@@ -81,21 +102,34 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
 
   // 2. Gather collections payments
   collections.forEach((col) => {
-    const buyer = buyers.find(b => String(b.id).trim().toLowerCase() === String(col.buyer_id).trim().toLowerCase());
-    const buyerName = buyer ? buyer.nickname || (buyer as any).name || (buyer as any).fullname : (!String(col.buyer_id).startsWith('temp_') ? col.buyer_id : "Unknown");
+    const buyer = buyers.find(
+      (b) =>
+        String(b.id).trim().toLowerCase() ===
+        String(col.buyer_id).trim().toLowerCase(),
+    );
+    const buyerName = buyer
+      ? buyer.nickname || (buyer as any).name || (buyer as any).fullname
+      : !String(col.buyer_id).startsWith("temp_")
+        ? col.buyer_id
+        : "Unknown";
 
-    const isQueued = queue.some((q) => q.table === "daily_collections" && q.id === col.id);
+    const isQueued = queue.some(
+      (q) => q.table === "daily_collections" && q.id === col.id,
+    );
 
     masterHistoryLog.push({
       id: col.id,
-      timestamp: col.id && typeof col.id === "string" && col.id.startsWith("temp_col_")
-        ? parseInt(col.id.replace("temp_col_", ""))
-        : col.id && typeof col.id === "string" && col.id.startsWith("temp_c_")
-        ? parseInt(col.id.replace("temp_c_", ""))
-        : new Date(col.date).getTime() || Date.now() - 5400000,
+      timestamp:
+        col.id && typeof col.id === "string" && col.id.startsWith("temp_col_")
+          ? parseInt(col.id.replace("temp_col_", ""))
+          : col.id && typeof col.id === "string" && col.id.startsWith("temp_c_")
+            ? parseInt(col.id.replace("temp_c_", ""))
+            : new Date(col.date).getTime() || Date.now() - 5400000,
       date: col.date || appDate,
       category: "collections",
-      title: col.is_approved ? "Payment Approved & Credited" : "Payment Collected (Pending)",
+      title: col.is_approved
+        ? "Payment Approved & Credited"
+        : "Payment Collected (Pending)",
       detail: `Received ${col.is_approved ? "Approved" : "Draft"} Cash Collection receipt sum from ${buyerName}`,
       operator: "Accounts Cashier",
       amount: col.amount_paid,
@@ -108,13 +142,16 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
     const source = sources.find((s) => s.id === p.source_id);
     const sourceName = source ? source.name : `Source ID: ${p.source_id}`;
 
-    const isQueued = queue.some((q) => q.table === "source_payments" && q.id === p.id);
+    const isQueued = queue.some(
+      (q) => q.table === "source_payments" && q.id === p.id,
+    );
 
     masterHistoryLog.push({
       id: p.id,
-      timestamp: p.id && typeof p.id === "string" && p.id.startsWith("temp_p_")
-        ? parseInt(p.id.replace("temp_p_", ""))
-        : new Date(p.date).getTime() || Date.now() - 7200000,
+      timestamp:
+        p.id && typeof p.id === "string" && p.id.startsWith("temp_p_")
+          ? parseInt(p.id.replace("temp_p_", ""))
+          : new Date(p.date).getTime() || Date.now() - 7200000,
       date: p.date || appDate,
       category: "settlements",
       title: "Source Outflow Settled",
@@ -130,9 +167,10 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
     const isQueued = queue.some((q) => q.table === "users" && q.id === u.id);
     masterHistoryLog.push({
       id: u.id,
-      timestamp: u.id && typeof u.id === "string" && u.id.startsWith("temp_u_")
-        ? parseInt(u.id.replace("temp_u_", ""))
-        : Date.now() - 86400000,
+      timestamp:
+        u.id && typeof u.id === "string" && u.id.startsWith("temp_u_")
+          ? parseInt(u.id.replace("temp_u_", ""))
+          : Date.now() - 86400000,
       date: "System Core",
       category: "crew",
       title: "Team Member Station Configured",
@@ -160,33 +198,67 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
   collections.forEach((col) => {
     if (!col.amount_paid) return;
     const dateStr = col.date || appDate;
-    const buyer = buyers.find(b => String(b.id).trim().toLowerCase() === String(col.buyer_id).trim().toLowerCase());
-    const name = buyer ? buyer.nickname || (buyer as any).name || (buyer as any).fullname : (!String(col.buyer_id).startsWith('temp_') ? col.buyer_id : "Unknown Buyer");
+    const buyer = buyers.find(
+      (b) =>
+        String(b.id).trim().toLowerCase() ===
+        String(col.buyer_id).trim().toLowerCase(),
+    );
+    const name = buyer
+      ? buyer.nickname || (buyer as any).name || (buyer as any).fullname
+      : !String(col.buyer_id).startsWith("temp_")
+        ? col.buyer_id
+        : "Unknown Buyer";
 
     if (!dayWiseCashbook[dateStr]) {
-      dayWiseCashbook[dateStr] = { totalInflows: 0, totalOutflows: 0, collectionsCount: 0, settlementsCount: 0, details: [] };
+      dayWiseCashbook[dateStr] = {
+        totalInflows: 0,
+        totalOutflows: 0,
+        collectionsCount: 0,
+        settlementsCount: 0,
+        details: [],
+      };
     }
     dayWiseCashbook[dateStr].totalInflows += col.amount_paid;
     dayWiseCashbook[dateStr].collectionsCount += 1;
-    dayWiseCashbook[dateStr].details.push(`Inflow: Received ₹${col.amount_paid.toLocaleString()} from ${name}`);
+    dayWiseCashbook[dateStr].details.push(
+      `Inflow: Received ₹${col.amount_paid.toLocaleString()} from ${name}`,
+    );
   });
 
   // Aggregate source payments (outflows)
   sourcePayments.forEach((sp) => {
     if (!sp.amount_paid_to_source) return;
     const dateStr = sp.date || appDate;
-    const source = sources.find(s => String(s.id).trim().toLowerCase() === String(sp.source_id).trim().toLowerCase());
-    const name = source ? source.name || (source as any).nickname : (!String(sp.source_id).startsWith('temp_') ? sp.source_id : "Unknown Source");
+    const source = sources.find(
+      (s) =>
+        String(s.id).trim().toLowerCase() ===
+        String(sp.source_id).trim().toLowerCase(),
+    );
+    const name = source
+      ? source.name || (source as any).nickname
+      : !String(sp.source_id).startsWith("temp_")
+        ? sp.source_id
+        : "Unknown Source";
 
     if (!dayWiseCashbook[dateStr]) {
-      dayWiseCashbook[dateStr] = { totalInflows: 0, totalOutflows: 0, collectionsCount: 0, settlementsCount: 0, details: [] };
+      dayWiseCashbook[dateStr] = {
+        totalInflows: 0,
+        totalOutflows: 0,
+        collectionsCount: 0,
+        settlementsCount: 0,
+        details: [],
+      };
     }
     dayWiseCashbook[dateStr].totalOutflows += sp.amount_paid_to_source;
     dayWiseCashbook[dateStr].settlementsCount += 1;
-    dayWiseCashbook[dateStr].details.push(`Outflow: Settled source ${name} with payout of ₹${sp.amount_paid_to_source.toLocaleString()}`);
+    dayWiseCashbook[dateStr].details.push(
+      `Outflow: Settled source ${name} with payout of ₹${sp.amount_paid_to_source.toLocaleString()}`,
+    );
   });
 
-  const sortedCashbookDays = Object.keys(dayWiseCashbook).sort((a, b) => b.localeCompare(a));
+  const sortedCashbookDays = Object.keys(dayWiseCashbook).sort((a, b) =>
+    b.localeCompare(a),
+  );
 
   // Apply filters
   const filteredLog = masterHistoryLog.filter((log) => {
@@ -216,18 +288,20 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
       className="space-y-6"
     >
       {/* Day-by-Day Cashbook Balance Audit Card */}
-      <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl shadow-2xl shadow-black/10 space-y-4">
+      <div className="glass-panel border border-divider p-5 rounded-[24px] shadow-2xl shadow-black/10 space-y-4">
         <div>
-          <h3 className="text-xs font-sans font-extrabold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-            <Landmark className="w-4 h-4 text-emerald-400" /> Day-Wise Ledger Cashbook Journal ({sortedCashbookDays.length} Days)
+          <h3 className="text-xs font-sans font-extrabold uppercase tracking-wider text-main flex items-center gap-1.5">
+            <Landmark className="w-4 h-4 text-emerald-500" /> Day-Wise Ledger
+            Cashbook Journal ({sortedCashbookDays.length} Days)
           </h3>
-          <p className="text-[10px] text-zinc-500 font-sans mt-0.5">
-            Automatic chronological aggregate of source payments and buyer collection receipts
+          <p className="text-[10px] text-faint font-sans mt-0.5">
+            Automatic chronological aggregate of source payments and buyer
+            collection receipts
           </p>
         </div>
 
         {sortedCashbookDays.length === 0 ? (
-          <div className="text-center py-6 text-zinc-600 text-[11px] font-mono">
+          <div className="text-center py-6 text-faint text-[11px] font-mono">
             No payments or collection receipts settled on this device yet.
           </div>
         ) : (
@@ -236,31 +310,46 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
               const day = dayWiseCashbook[dateStr];
               const netBalance = day.totalInflows - day.totalOutflows;
               return (
-                <div key={dateStr} className="p-3 bg-zinc-900/50 border border-zinc-800 rounded-2xl space-y-2.5">
-                  <div className="flex justify-between items-center border-b border-zinc-800 pb-1.5">
-                    <span className="text-xs font-bold font-mono text-emerald-400 flex items-center gap-1">
+                <div
+                  key={dateStr}
+                  className="p-3 bg-panel-dark border border-divider rounded-[24px] space-y-2.5"
+                >
+                  <div className="flex justify-between items-center border-b border-divider pb-1.5">
+                    <span className="text-xs font-bold font-mono text-emerald-500 flex items-center gap-1">
                       📅 Date: {dateStr}
                     </span>
-                    <span className={`text-[10px] font-mono leading-none ${netBalance >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                      Net: {netBalance >= 0 ? "+" : "-"}₹{Math.abs(netBalance).toLocaleString()}
+                    <span
+                      className={`text-[10px] font-mono leading-none ${netBalance >= 0 ? "text-emerald-500" : "text-rose-500"}`}
+                    >
+                      Net: {netBalance >= 0 ? "+" : "-"}₹
+                      {Math.abs(netBalance).toLocaleString()}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-center text-[10px] font-mono">
-                    <div className="bg-emerald-950/20 text-emerald-400 p-1.5 rounded border border-emerald-900/30">
+                    <div className="bg-emerald-950/20 text-emerald-500 p-1.5 rounded border border-emerald-900/30">
                       <div>IN (Buyer Paid)</div>
-                      <div className="font-extrabold text-[11px] mt-0.5 text-white">₹{day.totalInflows.toLocaleString()}</div>
+                      <div className="font-extrabold text-[11px] mt-0.5 text-main">
+                        ₹{day.totalInflows.toLocaleString()}
+                      </div>
                     </div>
-                    <div className="bg-rose-950/20 text-rose-400 p-1.5 rounded border border-rose-900/30 font-bold">
+                    <div className="bg-rose-950/20 text-rose-500 p-1.5 rounded border border-rose-900/30 font-bold">
                       <div>OUT (Settlements)</div>
-                      <div className="font-extrabold text-[11px] mt-0.5 text-white">₹{day.totalOutflows.toLocaleString()}</div>
+                      <div className="font-extrabold text-[11px] mt-0.5 text-main">
+                        ₹{day.totalOutflows.toLocaleString()}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="text-[8.5px] text-zinc-500 text-zinc-500 divide-y divide-zinc-800 bg-zinc-950/40 p-2 rounded">
-                    <div className="font-bold text-zinc-400 uppercase tracking-wider pb-1">Historical Line Items:</div>
+                  <div className="text-[8.5px] text-faint divide-y divide-zinc-800 glass-panel p-2 rounded">
+                    <div className="font-bold text-muted uppercase tracking-wider pb-1">
+                      Historical Line Items:
+                    </div>
                     {day.details.map((item, index) => (
-                      <div key={index} className="py-1 font-mono text-zinc-400 flex items-center gap-1">
+                      <div
+                        key={index}
+                        className="py-1 font-mono text-muted flex items-center gap-1"
+                      >
                         • {item}
                       </div>
                     ))}
@@ -273,76 +362,83 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
       </div>
 
       {/* Search Filter Head Segment */}
-      <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl shadow-lg flex flex-col md:flex-row items-center gap-4">
-        
+      <div className="glass-panel border border-divider p-5 rounded-[24px] shadow-lg flex flex-col md:flex-row items-center gap-4">
         {/* Search Field */}
         <div className="relative w-full md:flex-grow">
-          <Search className="absolute left-3.5 top-3 w-4 h-4 text-zinc-500" />
+          <Search className="absolute left-3.5 top-3 w-4 h-4 text-faint" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search master logs by fish type, buyers name, or operator stamps..."
-            className="w-full text-xs text-zinc-100 bg-zinc-900 border border-zinc-800 rounded-2xl py-3 pl-10 pr-4 focus:outline-none focus:ring-1 focus:ring-teal-500 font-sans"
+            className="w-full text-xs text-main glass-panel border border-divider rounded-[24px] py-3 pl-10 pr-4 focus:outline-none focus:ring-1 focus:ring-teal-500 font-sans"
           />
         </div>
 
         {/* Category toggles */}
-        <div className="flex border border-zinc-800 bg-zinc-900 p-1 rounded-2xl gap-1 shrink-0 text-xs w-full md:w-auto overflow-x-auto scrollbar-none">
+        <div className="flex border border-divider glass-panel p-1 rounded-[24px] gap-1 shrink-0 text-xs w-full md:w-auto overflow-x-auto scrollbar-none">
           <button
             onClick={() => setCategoryFilter("all")}
-            className={`px-3 py-1.5 rounded-2xl select-none font-bold cursor-pointer transition ${
-              categoryFilter === "all" ? "bg-teal-600 text-white" : "text-zinc-400 hover:text-zinc-200"
+            className={`px-3 py-1.5 rounded-[24px] select-none font-bold cursor-pointer transition ${
+              categoryFilter === "all"
+                ? "bg-teal-600 text-main"
+                : "text-muted hover:text-main"
             }`}
           >
             All Logs
           </button>
           <button
             onClick={() => setCategoryFilter("purchases")}
-            className={`px-3 py-1.5 rounded-2xl select-none font-bold cursor-pointer transition ${
-              categoryFilter === "purchases" ? "bg-teal-600 text-white" : "text-zinc-400 hover:text-zinc-200"
+            className={`px-3 py-1.5 rounded-[24px] select-none font-bold cursor-pointer transition ${
+              categoryFilter === "purchases"
+                ? "bg-teal-600 text-main"
+                : "text-muted hover:text-main"
             }`}
           >
             Auctions
           </button>
           <button
             onClick={() => setCategoryFilter("collections")}
-            className={`px-3 py-1.5 rounded-2xl select-none font-bold cursor-pointer transition ${
-              categoryFilter === "collections" ? "bg-teal-600 text-white" : "text-zinc-400 hover:text-zinc-200"
+            className={`px-3 py-1.5 rounded-[24px] select-none font-bold cursor-pointer transition ${
+              categoryFilter === "collections"
+                ? "bg-teal-600 text-main"
+                : "text-muted hover:text-main"
             }`}
           >
             Collections
           </button>
           <button
             onClick={() => setCategoryFilter("settlements")}
-            className={`px-3 py-1.5 rounded-2xl select-none font-bold cursor-pointer transition ${
-              categoryFilter === "settlements" ? "bg-teal-600 text-white" : "text-zinc-400 hover:text-zinc-200"
+            className={`px-3 py-1.5 rounded-[24px] select-none font-bold cursor-pointer transition ${
+              categoryFilter === "settlements"
+                ? "bg-teal-600 text-main"
+                : "text-muted hover:text-main"
             }`}
           >
             Source Payments
           </button>
         </div>
-
       </div>
 
       {/* History table log stream */}
-      <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 shadow-2xl shadow-black/10 space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+      <div className="glass-panel border border-divider rounded-[24px] p-5 shadow-2xl shadow-black/10 space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-divider">
           <div className="space-y-0.5">
-            <h3 className="text-xs font-sans font-extrabold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-              <Activity className="w-4.5 h-4.5 text-teal-400" /> Chronological System Audit Timeline
+            <h3 className="text-xs font-sans font-extrabold uppercase tracking-wider text-main flex items-center gap-1.5">
+              <Activity className="w-4.5 h-4.5 text-teal-500" /> Chronological
+              System Audit Timeline
             </h3>
-            <p className="text-[10px] text-zinc-500 font-sans">
+            <p className="text-[10px] text-faint font-sans">
               Decentralized offline-first transaction security tracking stream
             </p>
           </div>
-          <span className="text-[10px] font-mono text-zinc-400 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
+          <span className="text-[10px] font-mono text-muted glass-panel px-2 py-0.5 rounded border border-divider">
             Yielded: {filteredLog.length} ledger history rows
           </span>
         </div>
 
         {filteredLog.length === 0 ? (
-          <div className="text-center py-20 text-zinc-600 text-xs font-sans border border-dashed border-zinc-800 rounded-2xl">
+          <div className="text-center py-20 text-faint text-xs font-sans border border-dashed border-divider rounded-[24px]">
             No operations matches found inside the physical database audit.
           </div>
         ) : (
@@ -354,48 +450,63 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0 }}
-                  className="bg-zinc-950/40 border border-zinc-800 p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-zinc-800 transition duration-150 font-sans"
+                  className="glass-panel border border-divider p-5 rounded-[24px] flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-divider transition duration-150 font-sans"
                 >
                   <div className="flex items-start gap-3">
                     {/* Category icon */}
-                    <div className={`p-2 rounded-2xl mt-0.5 shrink-0 ${
-                      log.category === "purchases" ? "bg-blue-500/10 text-blue-400" :
-                      log.category === "collections" ? "bg-emerald-500/10 text-emerald-400" :
-                      log.category === "settlements" ? "bg-indigo-500/10 text-indigo-400" :
-                      "bg-purple-500/10 text-purple-400"
-                    }`}>
-                      {log.category === "purchases" ? <ShoppingBag className="w-4 h-4" /> :
-                       log.category === "collections" ? <Landmark className="w-4 h-4" /> :
-                       log.category === "settlements" ? <Anchor className="w-4 h-4" /> :
-                       <Users className="w-4 h-4" />}
+                    <div
+                      className={`p-2 rounded-[24px] mt-0.5 shrink-0 ${
+                        log.category === "purchases"
+                          ? "bg-blue-500/10 text-blue-400"
+                          : log.category === "collections"
+                            ? "bg-emerald-500/10 text-emerald-500"
+                            : log.category === "settlements"
+                              ? "bg-indigo-500/10 text-indigo-500"
+                              : "bg-purple-500/10 text-purple-400"
+                      }`}
+                    >
+                      {log.category === "purchases" ? (
+                        <ShoppingBag className="w-4 h-4" />
+                      ) : log.category === "collections" ? (
+                        <Landmark className="w-4 h-4" />
+                      ) : log.category === "settlements" ? (
+                        <Anchor className="w-4 h-4" />
+                      ) : (
+                        <Users className="w-4 h-4" />
+                      )}
                     </div>
 
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-black text-zinc-200">
+                        <span className="text-xs font-black text-main">
                           {log.title}
                         </span>
                         {log.localQueued && (
                           <span className="text-[9px] uppercase font-mono tracking-wider font-bold bg-amber-950/40 text-amber-500 border border-amber-900/40 px-1.5 py-0.2 rounded flex items-center gap-1 shrink-0 animate-pulse">
-                            <HardDrive className="w-2.5 h-2.5" /> Offline Buffered Writing
+                            <HardDrive className="w-2.5 h-2.5" /> Offline
+                            Buffered Writing
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-zinc-400 leading-relaxed font-sans">{log.detail}</p>
-                      
-                      <div className="text-[10px] text-zinc-500 font-mono flex flex-wrap gap-x-2">
+                      <p className="text-xs text-muted leading-relaxed font-sans">
+                        {log.detail}
+                      </p>
+
+                      <div className="text-[10px] text-faint font-mono flex flex-wrap gap-x-2">
                         <span>Stamp Date: {log.date}</span>
                         <span>•</span>
                         <span>Operator Stamp: {log.operator}</span>
                         <span>•</span>
-                        <span>Audit key: #{String(log.id).substring(0, 10)}</span>
+                        <span>
+                          Audit key: #{String(log.id).substring(0, 10)}
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   {log.amount !== undefined && (
                     <div className="text-right shrink-0">
-                      <span className="text-xs font-mono font-bold text-zinc-200 bg-zinc-900 px-3 py-1.5 rounded-2xl border border-zinc-800">
+                      <span className="text-xs font-mono font-bold text-main glass-panel px-3 py-1.5 rounded-[24px] border border-divider">
                         ₹ {log.amount.toLocaleString()}
                       </span>
                     </div>
@@ -406,7 +517,6 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
           </div>
         )}
       </div>
-
     </motion.div>
   );
 };

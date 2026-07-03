@@ -28,11 +28,15 @@ export async function performDayClosingBackup(): Promise<BackupResult> {
   const fileName = `NFC_Database_Closing_Snapshot_${timestamp}.json`;
 
   try {
-    const res = await uploadFileToGoogleDrive(fileName, serializedSnapshot, "application/json");
+    const res = await uploadFileToGoogleDrive(
+      fileName,
+      serializedSnapshot,
+      "application/json",
+    );
     return {
       fileId: res.fileId,
       webViewLink: res.webViewLink,
-      bytes
+      bytes,
     };
   } catch (err: any) {
     throw new Error(`Day Closing Backup failed: ${err.message}`);

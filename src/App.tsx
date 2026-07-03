@@ -5,7 +5,7 @@
 
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import React, { useState, Suspense, lazy } from "react";
-import { DataProvider, useData } from "./components/DataContext";
+import { DataProvider, useData } from "./contexts/DataContext";
 import { User } from "./db";
 import { initAuth } from "./utils/workspace";
 import {
@@ -29,6 +29,8 @@ import {
   Download,
   AlertCircle,
   Clock,
+  Fish,
+  Snowflake,
 } from "lucide-react";
 import { App as CapacitorApp } from "@capacitor/app";
 import { LocalNotifications } from "@capacitor/local-notifications";
@@ -498,36 +500,24 @@ const MarketDashboard: React.FC = () => {
   // Let's implement the Laptop Mother Hub View
   const renderLaptopWorkspace = () => (
     <div
-      className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${
-        activeTheme === "light"
-          ? "bg-zinc-50 text-zinc-900"
-          : "bg-zinc-950 text-zinc-100"
+      className={`min-h-screen flex flex-col font-sans transition-colors duration-200 relative ${
+        false /* removed activeTheme check */
+          ? "bg-transparent text-main"
+          : "bg-transparent text-main"
       }`}
     >
       {/* Laptop Header */}
       <header
-        className={`border-b flex flex-col sm:flex-row items-center justify-between gap-4 py-2 px-6 md:px-12 sticky top-0 z-50 shadow-sm backdrop-blur-md bg-opacity-95 transition-all duration-200 ${
-          activeTheme === "light"
-            ? "bg-zinc-50 border-zinc-200 text-zinc-900"
-            : "bg-[#090f1d] border-[#1d2d52]/50 text-zinc-100"
-        }`}
+        className="border-b border-divider flex flex-col sm:flex-row items-center justify-between gap-4 py-2 px-6 md:px-12 sticky top-0 z-50 shadow-sm glass-panel text-main transition-all duration-200"
       >
         <div className="flex items-center space-x-3 text-center sm:text-left select-none">
           <div
-            className={`rounded-xl px-3 py-1 border font-sans select-none ${
-              activeTheme === "light"
-                ? "bg-white border-zinc-200 text-zinc-800 shadow-sm"
-                : "bg-[#02050e] border-[#1d2d52]/60 text-white shadow"
-            }`}
+            className="rounded-xl px-3 py-1 border border-divider font-sans select-none glass-panel text-main shadow-sm"
           >
-            <h1 className="text-sm font-black tracking-wider uppercase font-sans leading-none flex items-center gap-1.5">
-              NEW FISH CENTER
+            <h1 className="text-sm font-black tracking-wider uppercase font-sans leading-none flex items-center gap-1.5 text-sky-500">
+              <Fish className="w-4 h-4" /> NEW FISH CENTER
               <span
-                className={`text-[8px] tracking-widest uppercase px-1.5 py-0.5 rounded-full font-mono font-bold ${
-                  activeTheme === "light"
-                    ? "bg-zinc-100 text-zinc-600"
-                    : "bg-zinc-800 text-teal-400 border border-teal-500/10"
-                }`}
+                className="text-[8px] tracking-widest uppercase px-1.5 py-0.5 rounded-full font-mono font-bold bg-panel-hover text-muted"
               >
                 Laptop Hub
               </span>
@@ -540,7 +530,7 @@ const MarketDashboard: React.FC = () => {
           {isInstallable && (
             <button
               onClick={handleInstallClick}
-              className="px-3 py-1.5 text-[11px] font-bold bg-indigo-600 text-white rounded-2xl shadow-md flex items-center gap-1.5 animate-pulse cursor-pointer hover:bg-indigo-500 transition"
+              className="px-3 py-1.5 text-[11px] font-bold bg-indigo-600 text-white rounded-3xl shadow-md flex items-center gap-1.5 animate-pulse cursor-pointer hover:bg-indigo-500 transition"
             >
               <Download className="w-3.5 h-3.5" />
               Install App (Desktop/Android)
@@ -548,32 +538,24 @@ const MarketDashboard: React.FC = () => {
           )}
           {/* Mode Switch Panel */}
           <div
-            className={`flex p-1 rounded-2xl border ${
-              activeTheme === "light"
-                ? "bg-zinc-200 border-zinc-300"
-                : "bg-zinc-900 border-zinc-800"
-            }`}
+            className="flex p-1 rounded-3xl border border-divider glass-panel text-main"
           >
             <button
               onClick={() => setDeviceMode("laptop")}
-              className={`px-3 py-1 text-[11px] font-bold rounded-2xl cursor-pointer transition flex items-center gap-1 ${
+              className={`px-3 py-1 text-[11px] font-bold rounded-3xl cursor-pointer transition flex items-center gap-1 ${
                 deviceMode === "laptop"
-                  ? "bg-teal-600 text-white shadow-md font-black"
-                  : activeTheme === "light"
-                    ? "text-zinc-700 hover:text-zinc-900"
-                    : "text-zinc-400 hover:text-zinc-200"
+                  ? "bg-teal-600 text-main shadow-md font-black"
+                  : "text-muted hover:text-main"
               }`}
             >
               💻 Laptop Hub
             </button>
             <button
               onClick={() => setDeviceMode("android")}
-              className={`px-3 py-1 text-[11px] font-bold rounded-2xl cursor-pointer transition flex items-center gap-1 ${
+              className={`px-3 py-1 text-[11px] font-bold rounded-3xl cursor-pointer transition flex items-center gap-1 ${
                 deviceMode === "android"
-                  ? "bg-amber-600 text-white shadow-md font-black"
-                  : activeTheme === "light"
-                    ? "text-zinc-700 hover:text-zinc-900"
-                    : "text-zinc-400 hover:text-zinc-200"
+                  ? "bg-amber-600 text-main shadow-md font-black"
+                  : "text-muted hover:text-main"
               }`}
             >
               📱 Android View
@@ -602,7 +584,7 @@ const MarketDashboard: React.FC = () => {
               </span>
               <button
                 onClick={handleStationLock}
-                className="p-1 px-2.5 rounded-full bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border border-rose-900/30 font-sans font-bold text-[9px] uppercase tracking-wider flex items-center gap-1 transition duration-150 cursor-pointer"
+                className="p-1 px-2.5 rounded-full bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 border border-rose-900/30 font-sans font-bold text-[9px] uppercase tracking-wider flex items-center gap-1 transition duration-150 cursor-pointer"
               >
                 <Lock className="w-3 h-3" /> Lock
               </button>
@@ -628,11 +610,7 @@ const MarketDashboard: React.FC = () => {
 
         {/* Ledger Work Area */}
         <div
-          className={`lg:col-span-8 border rounded-2xl p-5 md:p-6 shadow-2xl shadow-black/10 space-y-6 min-h-[600px] flex flex-col justify-between transition-colors duration-200 ${
-            activeTheme === "light"
-              ? "bg-white border-zinc-200 text-zinc-900"
-              : "bg-zinc-950 border-zinc-800 text-zinc-50"
-          }`}
+          className="lg:col-span-8 rounded-3xl p-5 md:p-6 shadow-2xl shadow-black/50 shadow-black/10 space-y-6 min-h-[600px] flex flex-col justify-between transition-colors duration-200 glass-panel border border-divider text-main"
         >
           <div className="space-y-6">
             {/* Tabs */}
@@ -642,7 +620,7 @@ const MarketDashboard: React.FC = () => {
                   e.currentTarget.scrollLeft += e.deltaY;
                 }
               }}
-              className="flex border-b border-zinc-800 custom-scrollbar overflow-x-auto gap-1"
+              className="flex custom-scrollbar overflow-x-auto gap-1 bg-panel-dark p-1 rounded-xl shadow-inner"
             >
               {[
                 {
@@ -713,11 +691,7 @@ const MarketDashboard: React.FC = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`pb-3 px-3 text-xs font-bold tracking-wider uppercase transition-all duration-150 cursor-pointer flex items-center gap-1.5 shrink-0 select-none ${
-                      activeTab === tab.id
-                        ? "border-b-2 border-teal-500 text-teal-400 font-black"
-                        : "text-zinc-400 hover:text-zinc-100 border-b-2 border-transparent"
-                    }`}
+                    className={`py-1.5 px-3 text-xs font-bold tracking-wider uppercase transition-all duration-150 cursor-pointer flex items-center gap-1.5 shrink-0 select-none rounded-lg ${activeTab === tab.id ? "bg-main text-app-bg shadow-sm scale-[1.02]" : "text-muted hover:text-main hover:bg-panel-hover"}`}
                   >
                     {tab.icon}
                     <span>{tab.label}</span>
@@ -728,7 +702,7 @@ const MarketDashboard: React.FC = () => {
             {/* Display active panel */}
             <div id="workspace-viewport">
               {loading && !data ? (
-                <div className="py-24 text-center text-zinc-400 space-y-3 font-mono">
+                <div className="py-24 text-center text-muted space-y-3 font-mono">
                   <div className="w-8 h-8 rounded-full border-2 border-teal-500 border-t-transparent animate-spin mx-auto"></div>
                   <div className="text-xs">
                     Accessing cloud storage registers...
@@ -832,7 +806,7 @@ const MarketDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-zinc-800 text-zinc-500 text-[10px] font-mono flex justify-between select-none">
+          <div className="pt-4 border-t border-none text-faint text-[10px] font-mono flex justify-between select-none">
             <span>
               ● Sync:{" "}
               {online
@@ -849,30 +823,30 @@ const MarketDashboard: React.FC = () => {
   // Let's implement the Android Specialized Terminal view
   // Designed for direct usage inside the Arat Floor on a mobile interface
   const renderAndroidWorkspace = () => (
-    <div className="h-[100dvh] w-full overflow-hidden bg-zinc-900 bg-radial flex flex-col items-center justify-center p-0 sm:p-6 font-sans">
+    <div className="h-[100dvh] w-full overflow-hidden bg-transparent bg-radial flex flex-col items-center justify-center p-0 sm:p-6 font-sans relative">
       {/* Device Mode Selection Bar above Smartphone wrapper (visible only on desktop) */}
-      <div className="hidden sm:flex bg-zinc-950 border border-zinc-800 p-1.5 rounded-2xl mb-4 gap-3 items-center shadow-lg">
+      <div className="hidden sm:flex bg-panel-dark border border-none p-1.5 rounded-3xl mb-4 gap-3 items-center shadow-lg">
         {isInstallable && (
           <button
             onClick={handleInstallClick}
-            className="px-3 py-1.5 text-xs font-bold bg-indigo-600 text-white rounded-2xl shadow-md font-black flex items-center gap-1.5 animate-pulse mr-2 cursor-pointer transition hover:bg-indigo-500"
+            className="px-3 py-1.5 text-xs font-bold bg-indigo-600 text-white rounded-3xl shadow-md font-black flex items-center gap-1.5 animate-pulse mr-2 cursor-pointer transition hover:bg-indigo-500"
           >
             <Download className="w-4 h-4" /> Install App (Mac/PC/Android)
           </button>
         )}
-        <span className="text-xs text-zinc-400 font-bold uppercase pl-2 select-none">
+        <span className="text-xs text-muted font-bold uppercase pl-2 select-none">
           Preview Hardware:
         </span>
-        <div className="flex bg-zinc-900 p-0.5 rounded-2xl border border-zinc-800">
+        <div className="flex glass-panel p-0.5 rounded-3xl border border-none">
           <button
             onClick={() => setDeviceMode("laptop")}
-            className="px-3 py-1.5 text-xs font-bold text-zinc-400 hover:text-white rounded-2xl transition"
+            className="px-3 py-1.5 text-xs font-bold text-muted hover:text-main rounded-3xl transition"
           >
             💻 Laptop Mode
           </button>
           <button
             onClick={() => setDeviceMode("android")}
-            className="px-3 py-1.5 text-xs font-bold bg-amber-600 text-white rounded-2xl shadow-md font-black"
+            className="px-3 py-1.5 text-xs font-bold bg-amber-600 text-main rounded-3xl shadow-md font-black"
           >
             📱 Android Mode
           </button>
@@ -881,18 +855,14 @@ const MarketDashboard: React.FC = () => {
 
       {/* Styled smartphone container with correct aesthetic */}
       <div
-        className={`w-full max-w-[460px] h-[100dvh] sm:h-[820px] sm:min-h-0 sm:max-h-[860px] sm:rounded-[40px] sm:ring-[14px] sm:ring-slate-950 sm:border-[4px] sm:border-zinc-800 flex flex-col justify-between shadow-2xl relative overflow-hidden print:max-w-none print:h-auto print:max-h-none print:min-h-0 print:ring-0 print:border-none print:rounded-none print:shadow-none print:overflow-visible transition-colors duration-200 ${
-          activeTheme === "light"
-            ? "bg-white text-zinc-900"
-            : "bg-zinc-950 text-zinc-50"
-        }`}
+        className="w-full max-w-[460px] h-[100dvh] sm:h-[820px] sm:min-h-0 sm:max-h-[860px] sm:rounded-[40px] sm:ring-[14px] sm:ring-slate-950 sm:border-[4px] sm:border-none flex flex-col justify-between shadow-2xl shadow-black/50 relative overflow-hidden print:max-w-none print:h-auto print:max-h-none print:min-h-0 print:ring-0 print:border-none print:rounded-none print:shadow-none print:overflow-visible transition-colors duration-200 glass-panel text-main"
       >
         {/* Smartphone top camera ear notch on desktop screens */}
-        <div className="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-40 h-6 bg-zinc-950 rounded-b-2xl z-[100] shadow-inner print:hidden" />
+        <div className="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-40 h-6 bg-panel-dark rounded-b-2xl z-[100] shadow-inner print:hidden" />
 
         {/* 1. Android Top Orange Status Bar - Safe spacing from the notification panel / notch */}
         <div
-          className={`text-white px-4 py-1 flex justify-between items-center text-[10px] font-black tracking-widest uppercase select-none z-50 shrink-0 shadow-sm font-sans animate-fadeIn print:hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transition-colors ${!online ? "bg-rose-600" : queue.length > 0 ? "bg-amber-600" : "bg-[#f27429]"}`}
+          className={`text-white px-4 py-1 flex justify-between items-center text-[10px] font-black tracking-widest uppercase select-none z-50 shrink-0 shadow-sm font-sans animate-fadeIn print:hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transition-colors ${!online ? "bg-rose-600" : queue.length > 0 ? "bg-amber-600" : "bg-[#0284c7]"}`}
         >
           {!online ? (
             <div className="flex items-center gap-1.5 animate-pulse">
@@ -917,22 +887,14 @@ const MarketDashboard: React.FC = () => {
 
         {/* 2. Mobile App Header */}
         <header
-          className={`border-b px-3.5 py-1.5 flex justify-between items-center z-45 shrink-0 select-none transition-colors duration-150 ${
-            activeTheme === "light"
-              ? "bg-[#fafafa] border-zinc-200"
-              : "bg-[#090f1d] border-[#1d2d52]/50"
-          }`}
+          className="border-b px-3.5 py-1.5 flex justify-between items-center z-45 shrink-0 select-none transition-colors duration-150 glass-panel border-divider"
         >
           {/* New Fish Center in a beautiful small panel */}
           <div
-            className={`rounded-xl px-2.5 py-1 shadow-sm border font-sans select-none ${
-              activeTheme === "light"
-                ? "bg-white border-zinc-200 text-zinc-800"
-                : "bg-[#02050e] border-[#1d2d52]/60 text-white"
-            }`}
+            className="rounded-xl px-2.5 py-1 shadow-sm border font-sans select-none glass-panel border-divider text-main"
           >
-            <h2 className="text-[10px] font-black uppercase tracking-wider font-sans leading-none">
-              NEW FISH CENTER
+            <h2 className="text-[10px] font-black uppercase tracking-wider font-sans leading-none flex items-center gap-1 text-sky-500">
+              <Fish className="w-3.5 h-3.5" /> NEW FISH CENTER
             </h2>
           </div>
 
@@ -944,11 +906,11 @@ const MarketDashboard: React.FC = () => {
                 className={`text-[8px] font-black uppercase tracking-wider leading-none inline-block px-1.5 py-0.5 rounded-full select-none ${
                   isAuthenticated && activeUser
                     ? activeUser.role === "admin"
-                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
                       : activeUser.role === "collector"
                         ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                        : "bg-sky-500/10 text-sky-400 border border-sky-500/20"
-                    : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                        : "bg-sky-500/10 text-sky-500 border border-sky-500/20"
+                    : "bg-rose-500/10 text-rose-500 border border-rose-500/20"
                 }`}
               >
                 {isAuthenticated && activeUser
@@ -957,7 +919,7 @@ const MarketDashboard: React.FC = () => {
               </span>
               <span
                 className={`text-[9px] font-bold mt-0.5 font-sans leading-none select-none tracking-tight ${
-                  activeTheme === "light" ? "text-zinc-600" : "text-zinc-300"
+                  "text-main"
                 }`}
               >
                 {isAuthenticated && activeUser
@@ -968,24 +930,91 @@ const MarketDashboard: React.FC = () => {
 
             {/* Selectable Date Picker Panel */}
             <div
-              className={`flex items-center pl-2.5 border-l ${
-                activeTheme === "light" ? "border-zinc-200" : "border-zinc-800"
-              }`}
+              className="flex items-center pl-2.5 border-l border-divider"
             >
               <input
                 type="date"
                 value={appDate}
                 onChange={(e) => setAppDate(e.target.value)}
-                className={`text-[9.5px] font-bold font-mono bg-transparent outline-none cursor-pointer focus:ring-0 ${
-                  activeTheme === "light"
-                    ? "text-zinc-700 hover:text-zinc-900"
-                    : "text-[#f27429] hover:text-[#ff8a43]"
-                }`}
+                className="text-[9.5px] font-bold font-mono bg-transparent outline-none cursor-pointer focus:ring-0 text-main hover:text-sky-500"
               />
             </div>
           </div>
         </header>
 
+        
+
+        {/* 4. Active Module Screen Content (Scrollable Viewport) */}
+        {/* Subpanel Container */}
+        <div
+          className={`flex-grow min-h-0 relative print:h-auto print:min-h-0 print:overflow-visible bg-transparent ${
+            activeTab === "transactions"
+              ? "overflow-hidden p-3"
+              : "overflow-y-auto p-4 space-y-4"
+          }`}
+        >
+          {/* Subpanel Container */}
+          <div
+            className={`text-main print:h-auto print:overflow-visible print:p-0 ${activeTab === "transactions" ? "h-full pb-0" : "pb-10 space-y-4"}`}
+            id="android-viewport-content"
+          >
+            <ErrorBoundary componentName="Active Tab">
+              <Suspense fallback={<FallbackLoader />}>
+                {activeTab === "dash" && (
+                  <DashboardPanel
+                    activeUser={activeUser}
+                    isAuthenticated={isAuthenticated}
+                    onNavigate={(tab) => setActiveTab(tab)}
+                  />
+                )}
+                {activeTab === "transactions" && (
+                  <TransactionPanel
+                    activeUser={activeUser}
+                    isAuthenticated={isAuthenticated}
+                    deviceMode="android"
+                  />
+                )}
+                {activeTab === "collections" && (
+                  <CollectPanel
+                    activeUser={activeUser}
+                    isAuthenticated={isAuthenticated}
+                  />
+                )}
+                {activeTab === "buyers" && (
+                  <BuyerPanel
+                    activeUser={activeUser}
+                    isAuthenticated={isAuthenticated}
+                  />
+                )}
+                {activeTab === "halkhata" && (
+                  <HalkhataPanel
+                    activeUser={activeUser}
+                    isAuthenticated={isAuthenticated}
+                  />
+                )}
+                {activeTab === "sources" && (
+                  <SourcePanel
+                    activeUser={activeUser}
+                    isAuthenticated={isAuthenticated}
+                  />
+                )}
+                {activeTab === "history" && (
+                  <HistoryPanel
+                    activeUser={activeUser}
+                    isAuthenticated={isAuthenticated}
+                  />
+                )}
+                {activeTab === "settings" && (
+                  <SettingsPanel
+                    activeUser={activeUser}
+                    isAuthenticated={isAuthenticated}
+                    onLogout={handleStationLock}
+                  />
+                )}
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        </div>
         {/* 3. Horizontal Navigation Tabs */}
         <nav
           onWheel={(e) => {
@@ -993,7 +1022,7 @@ const MarketDashboard: React.FC = () => {
               e.currentTarget.scrollLeft += e.deltaY;
             }
           }}
-          className="bg-zinc-100 border-b border-zinc-200 flex overflow-x-auto whitespace-nowrap custom-scrollbar py-2 px-3.5 z-40 shrink-0 select-none gap-4"
+          className="glass-panel border-t border-divider flex overflow-x-auto whitespace-nowrap custom-scrollbar py-2 px-3.5 z-40 shrink-0 select-none gap-4 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
         >
           {[
             {
@@ -1076,8 +1105,8 @@ const MarketDashboard: React.FC = () => {
                   onClick={() => setActiveTab(item.id as any)}
                   className={`py-1 px-1.5 relative cursor-pointer font-sans transition-all duration-150 select-none shrink-0 min-w-[64px] ${
                     isSelected
-                      ? "text-sky-600 scale-105 font-black"
-                      : "text-zinc-500 hover:text-zinc-700"
+                      ? "bg-main text-app-bg scale-105 font-black shadow-sm rounded-[16px] px-2 py-1"
+                      : "text-muted hover:text-main"
                   }`}
                 >
                   {item.icon}
@@ -1089,85 +1118,12 @@ const MarketDashboard: React.FC = () => {
                       {pendingReceiptsCount}
                     </span>
                   )}
-                  {isSelected && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-600 rounded-full" />
-                  )}
+                  
                 </button>
               );
             })}
         </nav>
 
-        {/* 4. Active Module Screen Content (Scrollable Viewport) */}
-        {/* Subpanel Container */}
-        <div
-          className={`flex-grow bg-zinc-50 min-h-0 relative print:h-auto print:min-h-0 print:overflow-visible ${
-            activeTab === "transactions"
-              ? "overflow-hidden p-3"
-              : "overflow-y-auto p-4 space-y-4"
-          }`}
-        >
-          {/* Subpanel Container */}
-          <div
-            className={`text-zinc-900 print:h-auto print:overflow-visible print:p-0 ${activeTab === "transactions" ? "h-full pb-0" : "pb-10 space-y-4"}`}
-            id="android-viewport-content"
-          >
-            <ErrorBoundary componentName="Active Tab">
-              <Suspense fallback={<FallbackLoader />}>
-                {activeTab === "dash" && (
-                  <DashboardPanel
-                    activeUser={activeUser}
-                    isAuthenticated={isAuthenticated}
-                    onNavigate={(tab) => setActiveTab(tab)}
-                  />
-                )}
-                {activeTab === "transactions" && (
-                  <TransactionPanel
-                    activeUser={activeUser}
-                    isAuthenticated={isAuthenticated}
-                    deviceMode="android"
-                  />
-                )}
-                {activeTab === "collections" && (
-                  <CollectPanel
-                    activeUser={activeUser}
-                    isAuthenticated={isAuthenticated}
-                  />
-                )}
-                {activeTab === "buyers" && (
-                  <BuyerPanel
-                    activeUser={activeUser}
-                    isAuthenticated={isAuthenticated}
-                  />
-                )}
-                {activeTab === "halkhata" && (
-                  <HalkhataPanel
-                    activeUser={activeUser}
-                    isAuthenticated={isAuthenticated}
-                  />
-                )}
-                {activeTab === "sources" && (
-                  <SourcePanel
-                    activeUser={activeUser}
-                    isAuthenticated={isAuthenticated}
-                  />
-                )}
-                {activeTab === "history" && (
-                  <HistoryPanel
-                    activeUser={activeUser}
-                    isAuthenticated={isAuthenticated}
-                  />
-                )}
-                {activeTab === "settings" && (
-                  <SettingsPanel
-                    activeUser={activeUser}
-                    isAuthenticated={isAuthenticated}
-                    onLogout={handleStationLock}
-                  />
-                )}
-              </Suspense>
-            </ErrorBoundary>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -1191,7 +1147,7 @@ const MarketDashboard: React.FC = () => {
             initial={{ opacity: 0, scale: 0.9, y: 50 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 50 }}
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999] bg-zinc-900/95 text-white px-5 py-2.5 rounded-full shadow-2xl text-xs font-bold font-sans flex items-center gap-2 backdrop-blur-md border border-zinc-700 pointer-events-none whitespace-nowrap"
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999] bg-panel-dark text-main px-5 py-2.5 rounded-full shadow-2xl shadow-black/50 text-xs font-bold font-sans flex items-center gap-2 backdrop-blur-2xl border border-zinc-700 pointer-events-none whitespace-nowrap"
           >
             <AlertCircle className="w-4 h-4 text-amber-500" />
             Press back again to exit
@@ -1211,29 +1167,22 @@ const MarketDashboard: React.FC = () => {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className={`w-full max-w-sm overflow-hidden rounded-2xl shadow-2xl ${
-                activeTheme === "light"
-                  ? "bg-white border-zinc-200"
-                  : "bg-[#0a0f1c] border-[#1d2d52]"
-              } border`}
+              className="w-full max-w-sm overflow-hidden rounded-3xl shadow-2xl shadow-black/50 glass-panel border border-divider text-main"
             >
-              <div className="p-6 space-y-5 text-center">
-                <div className="mx-auto w-12 h-12 bg-indigo-500/10 rounded-full flex items-center justify-center mb-2">
-                  <Clock className="w-6 h-6 text-indigo-400" />
-                </div>
-                <div>
-                  <h3
-                    className={`text-lg font-black font-sans tracking-tight ${activeTheme === "light" ? "text-zinc-900" : "text-white"}`}
-                  >
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="bg-sky-500/20 p-2 rounded-full">
+                    <Clock className="w-6 h-6 text-sky-500" />
+                  </div>
+                  <h3 className="text-xl font-black tracking-tight font-sans">
                     Midnight Rollover
                   </h3>
                   <p
-                    className={`text-xs mt-2 font-medium ${activeTheme === "light" ? "text-zinc-600" : "text-zinc-400"}`}
+                    className={`text-xs mt-2 font-medium ${false /* removed activeTheme check */ ? "text-faint" : "text-muted"}`}
                   >
-                    {isDayClosed 
+                    {isDayClosed
                       ? "It's past 12:00 AM. Yesterday's books are already closed. Do you want to proceed to the new day, or do you still need to view yesterday's records?"
-                      : "It's past 12:00 AM. Yesterday's books are not closed. Do you want to close the book and proceed to the new day, or do you still have work for yesterday?"
-                    }
+                      : "It's past 12:00 AM. Yesterday's books are not closed. Do you want to close the book and proceed to the new day, or do you still have work for yesterday?"}
                   </p>
                 </div>
 
@@ -1241,7 +1190,7 @@ const MarketDashboard: React.FC = () => {
                   <button
                     onClick={() => {
                       if (!isDayClosed) {
-                        write("settings", "update", {
+                        write("settings", "upsert", {
                           key: `day_closed_${appDate}`,
                           value: "true",
                         });
@@ -1250,9 +1199,12 @@ const MarketDashboard: React.FC = () => {
                       setShowMidnightPopup(false);
                       // toast.success(isDayClosed ? "Moved to Next Day." : "Book Closed. Moved to Next Day.");
                     }}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-sm uppercase tracking-wide hover:opacity-90 active:scale-[0.98] transition-all shadow-md flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-main font-black text-sm uppercase tracking-wide hover:opacity-90 active:scale-[0.98] transition-all shadow-md flex items-center justify-center gap-2"
                   >
-                    <CheckCircle /> {isDayClosed ? "Proceed to Next Day" : "Close Book & Proceed to Next Day"}
+                    <CheckCircle />{" "}
+                    {isDayClosed
+                      ? "Proceed to Next Day"
+                      : "Close Book & Proceed to Next Day"}
                   </button>
                   <button
                     onClick={() => {
@@ -1260,12 +1212,14 @@ const MarketDashboard: React.FC = () => {
                       setShowMidnightPopup(false);
                     }}
                     className={`w-full py-3 rounded-xl font-bold text-sm tracking-wide hover:bg-opacity-80 active:scale-[0.98] transition-all ${
-                      activeTheme === "light"
-                        ? "bg-zinc-100 text-zinc-700"
-                        : "bg-zinc-800 text-zinc-300"
+                      false /* removed activeTheme check */
+                        ? "bg-panel-hover text-main"
+                        : "bg-panel-hover text-main"
                     }`}
                   >
-                    {isDayClosed ? "Stay on Previous Day" : "No, I still have work on today"}
+                    {isDayClosed
+                      ? "Stay on Previous Day"
+                      : "No, I still have work on today"}
                   </button>
                 </div>
               </div>

@@ -442,7 +442,8 @@ export function constructPlainReportText(
     );
     const totalWeight = transactions.reduce((sum, tx) => sum + tx.weight, 0);
     txt += `------------------------------------------------------------------------\n`;
-    txt += `TOTAL CRATES RECORDED: ${transactions.length}\n`;
+    const uniqueCratesCount = new Set(transactions.map(t => t.fish_type || 'Unspecified')).size;
+    txt += `TOTAL CRATES RECORDED: ${uniqueCratesCount}\n`;
     txt += `TOTAL WEIGHT METRICS : ${totalWeight} KG\n`;
     txt += `TOTAL SALES REVENUE  : ৳${totalVolume}\n`;
   } else if (reportType === "source_payment") {

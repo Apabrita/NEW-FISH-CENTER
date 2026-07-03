@@ -1,13 +1,13 @@
-import { Capacitor } from '@capacitor/core';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
-import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
+import Papa from "papaparse";
+import * as XLSX from "xlsx";
 
 export async function downloadCSV(dataArray: any[], fileName: string) {
   try {
     const csvData = Papa.unparse(dataArray);
-    
+
     if (Capacitor.isNativePlatform()) {
       // For Capacitor native share
       const base64Data = btoa(unescape(encodeURIComponent(csvData)));
@@ -24,7 +24,7 @@ export async function downloadCSV(dataArray: any[], fileName: string) {
       });
     } else {
       // Web fallback
-      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
@@ -39,7 +39,10 @@ export async function downloadCSV(dataArray: any[], fileName: string) {
   }
 }
 
-export async function downloadXLSX(sheets: { name: string; data: any[] }[], fileName: string) {
+export async function downloadXLSX(
+  sheets: { name: string; data: any[] }[],
+  fileName: string,
+) {
   try {
     const wb = XLSX.utils.book_new();
 
@@ -50,7 +53,7 @@ export async function downloadXLSX(sheets: { name: string; data: any[] }[], file
 
     if (Capacitor.isNativePlatform()) {
       // For Capacitor native share, generate base64
-      const base64Data = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
+      const base64Data = XLSX.write(wb, { type: "base64", bookType: "xlsx" });
 
       const savedFile = await Filesystem.writeFile({
         path: fileName,
@@ -71,4 +74,3 @@ export async function downloadXLSX(sheets: { name: string; data: any[] }[], file
     alert("Failed to export XLSX file.");
   }
 }
-

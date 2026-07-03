@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from "react";
-import { useData } from "./DataContext";
+import { useData } from "../contexts/DataContext";
 import {
   PlusCircle,
   Search,
@@ -33,6 +33,8 @@ import {
   saveCredentials,
   clearCredentials,
   isSyncConfigured,
+  factoryResetData,
+  wipeAllData,
 } from "../db";
 
 interface SettingsPanelProps {
@@ -141,7 +143,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUserName || !newUserPin) return;
+    if (!newUserName.trim() || !newUserPin.trim()) return;
 
     if (!activeUser || !isAuthenticated || activeUser.role !== "admin") {
       alert(
@@ -152,8 +154,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
     const newUserPayload = {
       id: `temp_u_${Date.now()}`,
-      name: newUserName,
-      pin: newUserPin,
+      name: newUserName.trim().toUpperCase(),
+      pin: newUserPin.trim(),
       role: newUserRole,
     };
 
@@ -308,28 +310,28 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   return (
     <div
-      className={`space-y-6 transition-colors duration-200 ${activeTheme === "light" ? "text-zinc-900" : "text-[#f8fafc]"}`}
+      className={`space-y-6 transition-colors duration-200 ${activeTheme === "light" ? "text-main" : "text-[#f8fafc]"}`}
       id="settings-halkhata-panel"
     >
       <div className="flex flex-col gap-6">
         {/* 1. System Users management */}
         <div
-          className={`border rounded-2xl overflow-hidden shadow-md flex flex-col transition-colors duration-200 ${
+          className={`border rounded-[24px] overflow-hidden shadow-md flex flex-col transition-colors duration-200 ${
             activeTheme === "light"
-              ? "bg-white border-zinc-200"
-              : "bg-[#060a15] border-[#1d2d52]"
+              ? "glass-panel border-divider"
+              : "bg-panel border-divider"
           }`}
         >
           <div
             className={`px-5 py-4 border-b flex justify-between items-center transition-colors duration-200 ${
               activeTheme === "light"
-                ? "bg-zinc-50 border-zinc-200"
-                : "bg-[#0a1125] border-[#1d2d52]"
+                ? "glass-panel border-divider"
+                : "bg-panel-hover border-divider"
             }`}
           >
             <h4
               className={`font-sans font-extrabold text-xs uppercase tracking-wider ${
-                activeTheme === "light" ? "text-zinc-800" : "text-[#f8fafc]"
+                activeTheme === "light" ? "text-main" : "text-[#f8fafc]"
               }`}
             >
               Operator Management (Team)
@@ -344,12 +346,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 }
                 setShowAddUserForm(!showAddUserForm);
               }}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-2xl shadow-sm flex items-center justify-center gap-1 cursor-pointer transition ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-[24px] shadow-sm flex items-center justify-center gap-1 cursor-pointer transition ${
                 isAdmin
-                  ? "bg-teal-600 hover:bg-teal-700 text-white"
+                  ? "bg-teal-600 hover:bg-teal-700 text-main"
                   : activeTheme === "light"
-                    ? "bg-zinc-200 text-zinc-400 border border-zinc-300 cursor-not-allowed"
-                    : "bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-not-allowed"
+                    ? "bg-panel-dark text-muted border border-divider cursor-not-allowed"
+                    : "bg-panel-hover text-faint border border-zinc-700 cursor-not-allowed"
               }`}
             >
               <PlusCircle className="w-3.5 h-3.5" />
@@ -361,15 +363,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             {showAddUserForm && (
               <form
                 onSubmit={handleCreateUser}
-                className={`border p-4 rounded-2xl space-y-3 animate-slideDown transition-colors duration-200 ${
+                className={`border p-4 rounded-[24px] space-y-3 animate-slideDown transition-colors duration-200 ${
                   activeTheme === "light"
-                    ? "bg-zinc-50 border-zinc-200 text-zinc-900"
-                    : "bg-[#030611] border-[#1a2d52]"
+                    ? "glass-panel border-divider text-main"
+                    : "bg-panel border-divider"
                 }`}
               >
                 <div
                   className={`text-[11px] font-black uppercase tracking-wider ${
-                    activeTheme === "light" ? "text-zinc-800" : "text-zinc-300"
+                    activeTheme === "light" ? "text-main" : "text-main"
                   }`}
                 >
                   Registration form
@@ -377,7 +379,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div className="space-y-1">
                     <label
-                      className={`font-bold block ${activeTheme === "light" ? "text-zinc-700" : "text-zinc-300"}`}
+                      className={`font-bold block ${activeTheme === "light" ? "text-main" : "text-main"}`}
                     >
                       Full Name:
                     </label>
@@ -385,18 +387,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       type="text"
                       required
                       value={newUserName}
-                      onChange={(e) => setNewUserName(e.target.value)}
+                      onChange={(e) => setNewUserName(e.target.value.toUpperCase())}
                       placeholder="e.g. Kashem Ali"
-                      className={`w-full text-xs rounded-2xl p-2 focus:ring-1 outline-none font-semibold ${
+                      className={`w-full text-xs rounded-[24px] p-2 focus:ring-1 outline-none font-semibold ${
                         activeTheme === "light"
-                          ? "text-zinc-900 bg-white border border-zinc-300 focus:ring-teal-500 font-bold"
-                          : "text-white bg-[#020409] border border-[#1d2d52] focus:ring-indigo-500"
+                          ? "text-main glass-panel border border-divider focus:ring-teal-500 font-bold"
+                          : "text-main bg-app-bg border border-divider focus:ring-indigo-500"
                       }`}
                     />
                   </div>
                   <div className="space-y-1">
                     <label
-                      className={`font-bold block ${activeTheme === "light" ? "text-zinc-700" : "text-zinc-300"}`}
+                      className={`font-bold block ${activeTheme === "light" ? "text-main" : "text-main"}`}
                     >
                       Login Code / PIN (Digits):
                     </label>
@@ -409,27 +411,27 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         setNewUserPin(e.target.value.replace(/\D/g, ""))
                       }
                       placeholder="e.g. 5566"
-                      className={`w-full text-xs rounded-2xl p-2 focus:ring-1 outline-none font-semibold ${
+                      className={`w-full text-xs rounded-[24px] p-2 focus:ring-1 outline-none font-semibold ${
                         activeTheme === "light"
-                          ? "text-zinc-900 bg-white border border-zinc-300 focus:ring-teal-500 font-bold"
-                          : "text-white bg-[#020409] border border-[#1d2d52] focus:ring-indigo-550"
+                          ? "text-main glass-panel border border-divider focus:ring-teal-500 font-bold"
+                          : "text-main bg-app-bg border border-divider focus:ring-indigo-550"
                       }`}
                     />
                   </div>
                 </div>
                 <div className="space-y-1 text-xs">
                   <label
-                    className={`font-bold block ${activeTheme === "light" ? "text-zinc-705" : "text-zinc-300"}`}
+                    className={`font-bold block ${activeTheme === "light" ? "text-main" : "text-main"}`}
                   >
                     System Access Role:
                   </label>
                   <select
                     value={newUserRole}
                     onChange={(e) => setNewUserRole(e.target.value as any)}
-                    className={`w-full text-xs rounded-2xl p-2 focus:ring-1 outline-none font-semibold ${
+                    className={`w-full text-xs rounded-[24px] p-2 focus:ring-1 outline-none font-semibold ${
                       activeTheme === "light"
-                        ? "text-zinc-900 bg-white border border-zinc-300 focus:ring-teal-500 font-bold"
-                        : "text-white bg-[#020409] border border-[#1d2d52] focus:ring-indigo-550"
+                        ? "text-main glass-panel border border-divider focus:ring-teal-500 font-bold"
+                        : "text-main bg-app-bg border border-divider focus:ring-indigo-550"
                     }`}
                   >
                     <option value="admin">
@@ -447,17 +449,17 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowAddUserForm(false)}
-                    className={`px-3 py-1.5 text-[11px] font-bold rounded-2xl cursor-pointer transition ${
+                    className={`px-3 py-1.5 text-[11px] font-bold rounded-[24px] cursor-pointer transition ${
                       activeTheme === "light"
-                        ? "bg-zinc-200 hover:bg-zinc-300 text-zinc-800"
-                        : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200"
+                        ? "bg-panel-dark hover:bg-panel-dark text-main"
+                        : "bg-panel-hover hover:bg-zinc-700 text-main"
                     }`}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold rounded-2xl shadow-sm cursor-pointer"
+                    className="px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-main text-[11px] font-bold rounded-[24px] shadow-sm cursor-pointer"
                   >
                     Save Team Member
                   </button>
@@ -470,30 +472,30 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               {users.map((u) => (
                 <div
                   key={u.id}
-                  className={`p-3 border rounded-2xl flex items-center justify-between transition-colors duration-200 ${
+                  className={`p-3 border rounded-[24px] flex items-center justify-between transition-colors duration-200 ${
                     activeTheme === "light"
-                      ? "bg-zinc-50 border-zinc-150 text-zinc-900"
-                      : "bg-[#030611] border-[#131b2e] text-zinc-105"
+                      ? "glass-panel border-zinc-150 text-main"
+                      : "bg-panel border-divider text-main"
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase ${
                         activeTheme === "light"
-                          ? "bg-zinc-200 text-zinc-700"
-                          : "bg-[#16223f] text-zinc-100"
+                          ? "bg-panel-dark text-main"
+                          : "bg-panel-dark text-main"
                       }`}
                     >
                       {u.name.substring(0, 2)}
                     </div>
                     <div>
                       <div
-                        className={`text-xs font-bold ${activeTheme === "light" ? "text-zinc-800" : "text-[#ffffff]"}`}
+                        className={`text-xs font-bold ${activeTheme === "light" ? "text-main" : "text-[#ffffff]"}`}
                       >
                         {u.name}
                       </div>
                       <div
-                        className={`text-[10px] flex items-center gap-1 font-mono ${activeTheme === "light" ? "text-zinc-500" : "text-zinc-400"}`}
+                        className={`text-[10px] flex items-center gap-1 font-mono ${activeTheme === "light" ? "text-faint" : "text-muted"}`}
                       >
                         PIN code:{" "}
                         <span className="tracking-widest font-bold font-mono">
@@ -534,40 +536,40 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
         {/* 2. Global Halkhata configuration/settings */}
         <div
-          className={`border rounded-2xl overflow-hidden shadow-md flex flex-col transition-colors duration-200 ${
+          className={`border rounded-[24px] overflow-hidden shadow-md flex flex-col transition-colors duration-200 ${
             activeTheme === "light"
-              ? "bg-white border-zinc-200"
-              : "bg-[#060a15] border-[#1d2d52]"
+              ? "glass-panel border-divider"
+              : "bg-panel border-divider"
           }`}
         >
           <div
             className={`px-5 py-4 border-b flex items-center justify-between transition-colors duration-200 ${
               activeTheme === "light"
-                ? "bg-zinc-50 border-zinc-200"
-                : "bg-[#0a1125] border-[#1d2d52]"
+                ? "glass-panel border-divider"
+                : "bg-panel-hover border-divider"
             }`}
           >
             <h4
               className={`font-sans font-extrabold text-xs uppercase tracking-wider ${
-                activeTheme === "light" ? "text-zinc-800" : "text-[#f8fafc]"
+                activeTheme === "light" ? "text-main" : "text-[#f8fafc]"
               }`}
             >
               Halkhata Configuration & Database Keys
             </h4>
-            <KeyRound className="w-4 h-4 text-zinc-400" />
+            <KeyRound className="w-4 h-4 text-muted" />
           </div>
 
           <div className="p-5 flex-grow space-y-4">
             <div
-              className={`rounded-xl p-4 border space-y-3 text-xs leading-relaxed transition-colors duration-200 ${
+              className={`rounded-[16px] p-4 border space-y-3 text-xs leading-relaxed transition-colors duration-200 ${
                 activeTheme === "light"
-                  ? "bg-zinc-50 border-zinc-200 text-zinc-700"
-                  : "bg-[#030611] border-[#1d2d52] text-zinc-300"
+                  ? "glass-panel border-divider text-main"
+                  : "bg-panel border-divider text-main"
               }`}
             >
               <div
                 className={`font-sans font-black text-[11px] uppercase tracking-wider flex items-center gap-1 ${
-                  activeTheme === "light" ? "text-zinc-800" : "text-white"
+                  activeTheme === "light" ? "text-main" : "text-main"
                 }`}
               >
                 <ShieldAlert className="w-4 h-4 text-teal-555 shrink-0" />{" "}
@@ -580,14 +582,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 the end of the market shift!
               </p>
               <div
-                className={`p-3 border rounded-2xl font-mono flex justify-between items-center text-[10px] transition-colors duration-200 ${
+                className={`p-3 border rounded-[24px] font-mono flex justify-between items-center text-[10px] transition-colors duration-200 ${
                   activeTheme === "light"
-                    ? "bg-white border-zinc-200 text-zinc-900"
-                    : "bg-[#020409] border-[#1d2d52]"
+                    ? "glass-panel border-divider text-main"
+                    : "bg-app-bg border-divider"
                 }`}
               >
                 <span
-                  className={`uppercase font-sans font-bold ${activeTheme === "light" ? "text-zinc-500" : "text-zinc-400"}`}
+                  className={`uppercase font-sans font-bold ${activeTheme === "light" ? "text-faint" : "text-muted"}`}
                 >
                   Active Master PIN:
                 </span>
@@ -598,15 +600,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
 
             <div
-              className={`rounded-xl p-4 border space-y-3 text-xs leading-relaxed transition-colors duration-200 ${
+              className={`rounded-[16px] p-4 border space-y-3 text-xs leading-relaxed transition-colors duration-200 ${
                 activeTheme === "light"
-                  ? "bg-zinc-50 border-zinc-200 text-zinc-700"
-                  : "bg-[#030611] border-[#1d2d52] text-zinc-300"
+                  ? "glass-panel border-divider text-main"
+                  : "bg-panel border-divider text-main"
               }`}
             >
               <div
                 className={`font-sans font-black text-[11px] uppercase tracking-wider flex items-center gap-1 ${
-                  activeTheme === "light" ? "text-zinc-800" : "text-white"
+                  activeTheme === "light" ? "text-main" : "text-main"
                 }`}
               >
                 Auto Logout (Sleep) Setting
@@ -628,10 +630,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       value: e.target.value,
                     });
                   }}
-                  className={`text-xs p-2 rounded-xl focus:outline-none focus:ring-1 flex-1 ${
+                  className={`text-xs p-2 rounded-[16px] focus:outline-none focus:ring-1 flex-1 ${
                     activeTheme === "light"
-                      ? "bg-white text-zinc-900 border border-zinc-300 focus:ring-teal-500"
-                      : "bg-[#020409] text-white border border-[#1d2d52] focus:ring-indigo-500"
+                      ? "glass-panel text-main border border-divider focus:ring-teal-500"
+                      : "bg-app-bg text-main border border-divider focus:ring-indigo-500"
                   }`}
                 >
                   <option value="0">Never (Stay Logged In)</option>
@@ -647,7 +649,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <form onSubmit={handleUpdateHalkhataPin} className="space-y-4">
               <div className="space-y-1 text-xs">
                 <label
-                  className={`font-bold block ${activeTheme === "light" ? "text-zinc-700" : "text-zinc-300"}`}
+                  className={`font-bold block ${activeTheme === "light" ? "text-main" : "text-main"}`}
                 >
                   Configure Master Halkhata PIN:
                 </label>
@@ -661,22 +663,22 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                       setPinChangeSuccess(false);
                     }}
                     placeholder="Enter 4-6 digits"
-                    className={`text-xs text-center tracking-widest font-mono rounded-2xl px-2 py-2 flex-grow focus:outline-none focus:ring-1 ${
+                    className={`text-xs text-center tracking-widest font-mono rounded-[24px] px-2 py-2 flex-grow focus:outline-none focus:ring-1 ${
                       activeTheme === "light"
-                        ? "bg-white text-zinc-900 border border-zinc-300 focus:ring-teal-500"
-                        : "bg-[#020409] text-white border border-[#1d2d52] focus:ring-indigo-500"
+                        ? "glass-panel text-main border border-divider focus:ring-teal-500"
+                        : "bg-app-bg text-main border border-divider focus:ring-indigo-500"
                     }`}
                   />
                   <button
                     type="submit"
-                    className={`px-4 rounded-2xl font-bold text-xs transition duration-200 cursor-pointer flex items-center gap-1 border shadow-sm ${
+                    className={`px-4 rounded-[24px] font-bold text-xs transition duration-200 cursor-pointer flex items-center gap-1 border shadow-sm ${
                       isAdmin
                         ? activeTheme === "light"
-                          ? "bg-zinc-900 text-white border-zinc-800 hover:bg-zinc-800"
-                          : "bg-teal-600 text-white border-teal-500 hover:bg-teal-700"
+                          ? "glass-panel text-main border-divider hover:bg-panel-hover"
+                          : "bg-teal-600 text-main border-teal-500 hover:bg-teal-700"
                         : activeTheme === "light"
-                          ? "bg-zinc-100 text-zinc-400 border-zinc-200 cursor-not-allowed"
-                          : "bg-zinc-800 text-zinc-500 border-zinc-700 cursor-not-allowed"
+                          ? "bg-panel-hover text-muted border-divider cursor-not-allowed"
+                          : "bg-panel-hover text-faint border-zinc-700 cursor-not-allowed"
                     }`}
                     title={
                       isAdmin
@@ -691,14 +693,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
 
               {pinChangeSuccess && (
-                <div className="p-2 bg-emerald-50 text-emerald-800 border border-emerald-200 text-center rounded-2xl text-[10px] font-bold">
+                <div className="p-2 bg-emerald-50 text-emerald-800 border border-emerald-200 text-center rounded-[24px] text-[10px] font-bold">
                   Halkhata configuration PIN successfully committed and queued!
                 </div>
               )}
 
               {!isAdmin && (
                 <div
-                  className={`p-3 rounded-2xl text-[11px] leading-relaxed border font-bold ${
+                  className={`p-3 rounded-[24px] text-[11px] leading-relaxed border font-bold ${
                     activeTheme === "light"
                       ? "bg-rose-50 text-rose-700 border-rose-200"
                       : "bg-rose-950/20 text-rose-300 border-rose-900/40"
@@ -715,18 +717,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       </div>
       {/* 3. Terminal Theme Adjustment */}
       <div
-        className={`border rounded-2xl overflow-hidden shadow-md p-5 space-y-4 max-w-xl mx-auto transition-colors duration-200 ${
+        className={`border rounded-[24px] overflow-hidden shadow-md p-5 space-y-4 max-w-xl mx-auto transition-colors duration-200 ${
           activeTheme === "light"
-            ? "bg-white border-zinc-200"
-            : "bg-[#060a15] border-[#1d2d52]"
+            ? "glass-panel border-divider"
+            : "bg-panel border-divider"
         }`}
       >
         <div
-          className={`border-b pb-3 flex justify-between items-center ${activeTheme === "light" ? "border-zinc-100" : "border-[#1d2d52]"}`}
+          className={`border-b pb-3 flex justify-between items-center ${activeTheme === "light" ? "border-divider" : "border-divider"}`}
         >
           <h4
             className={`font-sans font-black text-xs uppercase tracking-wider flex items-center gap-1.5 ${
-              activeTheme === "light" ? "text-zinc-800" : "text-[#f8fafc]"
+              activeTheme === "light" ? "text-main" : "text-[#f8fafc]"
             }`}
           >
             🎨 Terminal Theme & Sunlight Settings
@@ -734,7 +736,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <span
             className={`text-[9.5px] uppercase font-mono font-extrabold px-3 py-1 rounded-full ${
               activeTheme === "light"
-                ? "bg-amber-100 text-amber-805 border border-amber-200"
+                ? "bg-amber-100 text-amber-800 border border-amber-200"
                 : "bg-sky-950/80 text-[#2dd4bf] border border-[#115e59]"
             }`}
           >
@@ -745,7 +747,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </div>
 
         <p
-          className={`text-[10.5px] leading-relaxed font-sans ${activeTheme === "light" ? "text-zinc-600" : "text-zinc-400"}`}
+          className={`text-[10.5px] leading-relaxed font-sans ${activeTheme === "light" ? "text-faint" : "text-muted"}`}
         >
           Configure display colors to combat harsh outdoor sunlight reflections
           or switch to eye-safe nighttime levels. Choosing{" "}
@@ -757,27 +759,27 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <button
             type="button"
             onClick={() => setTheme("system")}
-            className={`py-3 px-3.5 rounded-2xl border text-center font-bold tracking-tight transition cursor-pointer flex flex-col items-center justify-center gap-1.5 ${
+            className={`py-3 px-3.5 rounded-[24px] border text-center font-bold tracking-tight transition cursor-pointer flex flex-col items-center justify-center gap-1.5 ${
               theme === "system"
                 ? "bg-teal-50 border-teal-500 text-teal-705 font-extrabold shadow-sm"
                 : activeTheme === "light"
-                  ? "bg-zinc-50 border-zinc-200 text-zinc-705 hover:bg-zinc-100"
-                  : "bg-[#030611] border-[#1d2d52] text-zinc-350 hover:bg-[#0a1125]"
+                  ? "glass-panel border-divider text-main hover:bg-panel-hover"
+                  : "bg-panel border-divider text-muted hover:bg-panel-hover"
             }`}
           >
-            <Sliders className="w-4.5 h-4.5 text-zinc-500" />
+            <Sliders className="w-4.5 h-4.5 text-faint" />
             <span>🖥️ System</span>
           </button>
 
           <button
             type="button"
             onClick={() => setTheme("light")}
-            className={`py-3 px-3.5 rounded-2xl border text-center font-bold tracking-tight transition cursor-pointer flex flex-col items-center justify-center gap-1.5 ${
+            className={`py-3 px-3.5 rounded-[24px] border text-center font-bold tracking-tight transition cursor-pointer flex flex-col items-center justify-center gap-1.5 ${
               theme === "light"
                 ? "bg-amber-100 border-amber-500 text-amber-800 font-extrabold shadow-sm"
                 : activeTheme === "light"
-                  ? "bg-zinc-50 border-zinc-200 text-zinc-705 hover:bg-zinc-100"
-                  : "bg-[#030611] border-[#1d2d52] text-zinc-350 hover:bg-[#0a1125]"
+                  ? "glass-panel border-divider text-main hover:bg-panel-hover"
+                  : "bg-panel border-divider text-muted hover:bg-panel-hover"
             }`}
           >
             <Sun className="w-4.5 h-4.5 text-amber-550" />
@@ -787,12 +789,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <button
             type="button"
             onClick={() => setTheme("dark")}
-            className={`py-3 px-3.5 rounded-2xl border text-center font-bold tracking-tight transition cursor-pointer flex flex-col items-center justify-center gap-1.5 ${
+            className={`py-3 px-3.5 rounded-[24px] border text-center font-bold tracking-tight transition cursor-pointer flex flex-col items-center justify-center gap-1.5 ${
               theme === "dark"
                 ? "bg-indigo-950 border-indigo-400 text-indigo-150 font-extrabold shadow-sm"
                 : activeTheme === "light"
-                  ? "bg-zinc-50 border-zinc-200 text-zinc-705 hover:bg-zinc-100"
-                  : "bg-[#030611] border-[#1d2d52] text-zinc-350 hover:bg-[#0a1125]"
+                  ? "glass-panel border-divider text-main hover:bg-panel-hover"
+                  : "bg-panel border-divider text-muted hover:bg-panel-hover"
             }`}
           >
             <Moon className="w-4.5 h-4.5 text-indigo-500" />
@@ -803,18 +805,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {/* 4. Database Storage & 7-Day Safety Retention Optimizer */}
       <div
-        className={`border rounded-2xl overflow-hidden shadow-md p-5 space-y-4 max-w-xl mx-auto transition-colors duration-200 ${
+        className={`border rounded-[24px] overflow-hidden shadow-md p-5 space-y-4 max-w-xl mx-auto transition-colors duration-200 ${
           activeTheme === "light"
-            ? "bg-white border-zinc-200"
-            : "bg-[#060a15] border-[#1d2d52]"
+            ? "glass-panel border-divider"
+            : "bg-panel border-divider"
         }`}
       >
         <div
-          className={`border-b pb-3 flex justify-between items-center ${activeTheme === "light" ? "border-zinc-100" : "border-[#1d2d52]"}`}
+          className={`border-b pb-3 flex justify-between items-center ${activeTheme === "light" ? "border-divider" : "border-divider"}`}
         >
           <h4
             className={`font-sans font-black text-xs uppercase tracking-wider flex items-center gap-1.5 ${
-              activeTheme === "light" ? "text-zinc-800" : "text-[#f8fafc]"
+              activeTheme === "light" ? "text-main" : "text-[#f8fafc]"
             }`}
           >
             ⚡ 30-Day Database Space Optimizer
@@ -826,7 +828,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
         <div className="space-y-3">
           <p
-            className={`text-[10.5px] leading-relaxed font-sans ${activeTheme === "light" ? "text-zinc-655" : "text-zinc-400"}`}
+            className={`text-[10.5px] leading-relaxed font-sans ${activeTheme === "light" ? "text-muted" : "text-muted"}`}
           >
             Your Arat operates with around 350+ global buyers (100+ active
             daily) and up to 20 vessels. At 1,000+ transaction/weight entries
@@ -835,10 +837,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           </p>
 
           <div
-            className={`grid grid-cols-2 gap-2.5 p-3 rounded-2xl border text-[10px] font-mono transition-colors duration-200 ${
+            className={`grid grid-cols-2 gap-2.5 p-3 rounded-[24px] border text-[10px] font-mono transition-colors duration-200 ${
               activeTheme === "light"
-                ? "bg-zinc-50 border-zinc-200 text-zinc-800"
-                : "bg-[#020409] border-[#1d2d52] text-zinc-350"
+                ? "glass-panel border-divider text-main"
+                : "bg-app-bg border-divider text-muted"
             }`}
           >
             <div className="space-y-1">
@@ -859,7 +861,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <strong>{data?.transactions?.length || 0} records</strong>
               </div>
             </div>
-            <div className="space-y-1 border-l pl-3 border-zinc-200/50">
+            <div className="space-y-1 border-l pl-3 border-divider/50">
               <div>
                 💳 Stored Collections:{" "}
                 <strong>{data?.daily_collections?.length || 0} entries</strong>
@@ -877,14 +879,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   KB
                 </strong>
               </div>
-              <div className="text-[8.5px] text-zinc-500">
-                Supabase Free Quota: <strong>~500 MB</strong>
+              <div className="text-[8.5px] text-faint">
+                Local Data Free Quota: <strong>~500 MB</strong>
               </div>
             </div>
           </div>
 
           <p
-            className={`text-[10px] leading-relaxed italic ${activeTheme === "light" ? "text-zinc-500" : "text-zinc-500"}`}
+            className={`text-[10px] leading-relaxed italic ${activeTheme === "light" ? "text-faint" : "text-faint"}`}
           >
             * <strong>Safety Assurance Rule:</strong> Running the 30-day space
             sweep purges old granular transaction lots and payment stamps older
@@ -894,7 +896,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           </p>
 
           {pruningStatus && (
-            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-center text-[10px] font-mono text-emerald-400 font-black animate-slideDown">
+            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-[24px] text-center text-[10px] font-mono text-emerald-500 font-black animate-slideDown">
               ⚙️ {pruningStatus}
             </div>
           )}
@@ -904,16 +906,16 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               type="button"
               disabled={isPruning}
               onClick={handleSafetyPrune}
-              className={`px-4 py-2 w-full sm:w-auto text-center font-bold text-xs rounded-2xl transition-all duration-150 cursor-pointer shadow border ${
+              className={`px-4 py-2 w-full sm:w-auto text-center font-bold text-xs rounded-[24px] transition-all duration-150 cursor-pointer shadow border ${
                 isAdmin
                   ? isPruning
-                    ? "bg-zinc-800 text-zinc-500 border-zinc-700 cursor-not-allowed"
+                    ? "bg-panel-hover text-faint border-zinc-700 cursor-not-allowed"
                     : activeTheme === "light"
-                      ? "bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800"
-                      : "bg-teal-605 border-teal-555 text-white hover:bg-teal-700 shadow-teal-500/10"
+                      ? "glass-panel border-divider text-main hover:bg-panel-hover"
+                      : "bg-teal-605 border-teal-555 text-main hover:bg-teal-700 shadow-teal-500/10"
                   : activeTheme === "light"
-                    ? "bg-zinc-100 text-zinc-400 border-zinc-200 cursor-not-allowed"
-                    : "bg-zinc-800 text-zinc-500 border-zinc-700 cursor-not-allowed"
+                    ? "bg-panel-hover text-muted border-divider cursor-not-allowed"
+                    : "bg-panel-hover text-faint border-zinc-700 cursor-not-allowed"
               }`}
             >
               {isPruning
@@ -926,18 +928,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {/* 5. Offline Operations Sync Queue */}
       <div
-        className={`border rounded-2xl overflow-hidden shadow-md p-5 space-y-4 max-w-xl mx-auto transition-colors duration-200 ${
+        className={`border rounded-[24px] overflow-hidden shadow-md p-5 space-y-4 max-w-xl mx-auto transition-colors duration-200 ${
           activeTheme === "light"
-            ? "bg-white border-zinc-200"
-            : "bg-[#060a15] border-[#1d2d52]"
+            ? "glass-panel border-divider"
+            : "bg-panel border-divider"
         }`}
       >
         <div
-          className={`border-b pb-3 flex justify-between items-center flex-wrap gap-2 ${activeTheme === "light" ? "border-zinc-100" : "border-[#1d2d52]"}`}
+          className={`border-b pb-3 flex justify-between items-center flex-wrap gap-2 ${activeTheme === "light" ? "border-divider" : "border-divider"}`}
         >
           <h4
             className={`font-sans font-black text-xs uppercase tracking-wider flex items-center gap-1.5 ${
-              activeTheme === "light" ? "text-zinc-800" : "text-[#f8fafc]"
+              activeTheme === "light" ? "text-main" : "text-[#f8fafc]"
             }`}
           >
             <Server className="w-4 h-4" /> Offline & Sync Queue
@@ -955,7 +957,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             {queue.length > 0 && (
               <button
                 onClick={handleSyncAll}
-                className="px-3 py-1 text-[10px] uppercase font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-full border border-teal-500 shadow-sm cursor-pointer transition flex items-center gap-1"
+                className="px-3 py-1 text-[10px] uppercase font-bold bg-teal-600 hover:bg-teal-700 text-main rounded-full border border-teal-500 shadow-sm cursor-pointer transition flex items-center gap-1"
                 title="Attempt to synchronize all pending operations automatically"
               >
                 Sync All <Server className="w-3 h-3" />
@@ -965,7 +967,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </div>
 
         <p
-          className={`text-[10px] leading-relaxed font-sans ${activeTheme === "light" ? "text-zinc-655" : "text-zinc-400"}`}
+          className={`text-[10px] leading-relaxed font-sans ${activeTheme === "light" ? "text-muted" : "text-muted"}`}
         >
           If the system lost connection, records are stored safely in an offline
           cache. These will automatically synchronize once the internet is
@@ -973,7 +975,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </p>
 
         {queue.length === 0 ? (
-          <div className="p-4 border border-dashed rounded-2xl text-center text-xs font-bold text-zinc-400">
+          <div className="p-4 border border-dashed rounded-[24px] text-center text-xs font-bold text-muted">
             All operations perfectly synchronized.
           </div>
         ) : (
@@ -981,10 +983,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             {[...queue].reverse().map((qItem, index) => (
               <div
                 key={qItem.timestamp || index}
-                className={`p-3 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+                className={`p-3 rounded-[24px] border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
                   activeTheme === "light"
-                    ? "bg-zinc-50 border-zinc-200 text-zinc-800"
-                    : "bg-[#020409] border-[#1d2d52] text-zinc-300"
+                    ? "glass-panel border-divider text-main"
+                    : "bg-app-bg border-divider text-main"
                 }`}
               >
                 <div className="space-y-1">
@@ -1000,10 +1002,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     >
                       {qItem.action}
                     </span>
-                    <span className="font-bold text-zinc-500">
+                    <span className="font-bold text-faint">
                       [{qItem.table}]
                     </span>
-                    <span className="text-zinc-400">
+                    <span className="text-muted">
                       {new Date(qItem.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
@@ -1014,14 +1016,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <div className="flex gap-1.5 shrink-0 self-end sm:self-auto">
                   <button
                     onClick={() => handleRetryItem(qItem)}
-                    className="p-1.5 px-3 rounded text-[10px] uppercase font-bold tracking-wider bg-teal-600 hover:bg-teal-700 text-white cursor-pointer transition shadow-sm border border-teal-500"
+                    className="p-1.5 px-3 rounded text-[10px] uppercase font-bold tracking-wider bg-teal-600 hover:bg-teal-700 text-main cursor-pointer transition shadow-sm border border-teal-500"
                     title="Retry this operation"
                   >
                     Sync
                   </button>
                   <button
                     onClick={() => handleRemoveQueueItem(qItem.timestamp)}
-                    className="p-1.5 rounded bg-zinc-200 hover:bg-rose-100 text-zinc-500 hover:text-rose-600 cursor-pointer transition border border-zinc-300 hover:border-rose-300"
+                    className="p-1.5 rounded bg-panel-dark hover:bg-rose-100 text-faint hover:text-rose-600 cursor-pointer transition border border-divider hover:border-rose-300"
                     title="Discard (Danger)"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -1035,18 +1037,18 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {/* 6. Data Export (CSV Backup) */}
       <div
-        className={`border rounded-2xl overflow-hidden shadow-md p-5 space-y-4 max-w-xl mx-auto transition-colors duration-200 ${
+        className={`border rounded-[24px] overflow-hidden shadow-md p-5 space-y-4 max-w-xl mx-auto transition-colors duration-200 ${
           activeTheme === "light"
-            ? "bg-white border-zinc-200"
-            : "bg-[#060a15] border-[#1d2d52]"
+            ? "glass-panel border-divider"
+            : "bg-panel border-divider"
         }`}
       >
         <div
-          className={`border-b pb-3 flex justify-between items-center ${activeTheme === "light" ? "border-zinc-100" : "border-[#1d2d52]"}`}
+          className={`border-b pb-3 flex justify-between items-center ${activeTheme === "light" ? "border-divider" : "border-divider"}`}
         >
           <h4
             className={`font-sans font-black text-xs uppercase tracking-wider flex items-center gap-1.5 ${
-              activeTheme === "light" ? "text-zinc-800" : "text-[#f8fafc]"
+              activeTheme === "light" ? "text-main" : "text-[#f8fafc]"
             }`}
           >
             💾 Database Backup & Export
@@ -1058,7 +1060,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
         <div className="space-y-3">
           <p
-            className={`text-[10.5px] leading-relaxed font-sans ${activeTheme === "light" ? "text-zinc-655" : "text-zinc-400"}`}
+            className={`text-[10.5px] leading-relaxed font-sans ${activeTheme === "light" ? "text-muted" : "text-muted"}`}
           >
             Generate an offline emergency backup of all your transactions and
             ledger balances. The data will be encoded securely into a Microsoft
@@ -1130,10 +1132,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   `NFC_BACKUP_${new Date().toISOString().split("T")[0]}.xlsx`,
                 );
               }}
-              className={`px-4 py-2 w-full sm:w-auto text-center font-bold text-xs rounded-2xl shadow border transition cursor-pointer ${
+              className={`px-4 py-2 w-full sm:w-auto text-center font-bold text-xs rounded-[24px] shadow border transition cursor-pointer ${
                 activeTheme === "light"
-                  ? "bg-blue-600 border-blue-500 text-white hover:bg-blue-700 shadow-blue-500/20"
-                  : "bg-blue-600 border-blue-500 text-white hover:bg-blue-700 shadow-blue-500/10"
+                  ? "bg-blue-600 border-blue-500 text-main hover:bg-blue-700 shadow-blue-500/20"
+                  : "bg-blue-600 border-blue-500 text-main hover:bg-blue-700 shadow-blue-500/10"
               }`}
             >
               📥 Download Local Excel Backup
@@ -1145,10 +1147,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       {/* Danger Zone: Wipe Database Section */}
       {isAdmin && (
         <div
-          className={`border rounded-2xl overflow-hidden shadow-md p-5 space-y-4 max-w-xl mx-auto transition-colors duration-200 mt-4 relative ${
+          className={`border rounded-[24px] overflow-hidden shadow-md p-5 space-y-4 max-w-xl mx-auto transition-colors duration-200 mt-4 relative ${
             activeTheme === "light"
               ? "bg-rose-50 border-rose-200"
-              : "bg-zinc-900 border-red-900/50"
+              : "glass-panel border-red-900/50"
           }`}
         >
           <div className="absolute inset-0 bg-red-500/5 pointer-events-none"></div>
@@ -1161,7 +1163,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           </div>
           <div className="space-y-3 relative">
             <p
-              className={`text-[10.5px] leading-relaxed font-sans ${activeTheme === "light" ? "text-zinc-600" : "text-zinc-400"}`}
+              className={`text-[10.5px] leading-relaxed font-sans ${activeTheme === "light" ? "text-faint" : "text-muted"}`}
             >
               Completely erase all Transactions, Source Records, and Daily
               Collections from the Cloud Database. Buyers, Settings, and User
@@ -1179,7 +1181,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   );
                   if (step2 === "FACTORY RESET") {
                     try {
-                      const { factoryResetData } = await import("../db");
+                      
                       await factoryResetData();
                       alert("Factory Reset Complete. The app will now reload.");
                       window.location.reload();
@@ -1188,7 +1190,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     }
                   }
                 }}
-                className="px-4 py-2 text-[10.5px] font-bold uppercase tracking-wider rounded-2xl transition border border-red-800 text-red-500 hover:bg-red-950 cursor-pointer w-full sm:w-auto text-center"
+                className="px-4 py-2 text-[10.5px] font-bold uppercase tracking-wider rounded-[24px] transition border border-red-800 text-red-500 hover:bg-red-950 cursor-pointer w-full sm:w-auto text-center"
               >
                 FACTORY RESET
               </button>
@@ -1204,7 +1206,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   );
                   if (step2 === "DELETE") {
                     try {
-                      const { wipeAllData } = await import("../db");
+                      
                       await wipeAllData();
                       alert("Transactions Wiped. The app will now reload.");
                       window.location.reload();
@@ -1213,7 +1215,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     }
                   }
                 }}
-                className="px-4 py-2 text-[10.5px] font-bold uppercase tracking-wider rounded-2xl transition bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/20 cursor-pointer w-full sm:w-auto text-center"
+                className="px-4 py-2 text-[10.5px] font-bold uppercase tracking-wider rounded-[24px] transition bg-red-600 hover:bg-red-500 text-main shadow-lg shadow-red-500/20 cursor-pointer w-full sm:w-auto text-center"
               >
                 WIPE TRANSACTIONS 🗑️
               </button>
@@ -1225,10 +1227,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       {/* 5. Shift Session termination - Only visible under settings */}
       {isAuthenticated && onLogout && (
         <div
-          className={`border rounded-2xl overflow-hidden shadow-md p-5 transition-colors duration-200 ${
+          className={`border rounded-[24px] overflow-hidden shadow-md p-5 transition-colors duration-200 ${
             activeTheme === "light"
               ? "bg-rose-50 border-rose-200 text-rose-955"
-              : "bg-[#180a0f] border-[#5e192a] text-[#fca5a5]"
+              : "bg-rose-500/10 border-rose-500/20 text-[#fca5a5]"
           }`}
         >
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -1236,7 +1238,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <h4 className="font-sans font-extrabold text-xs uppercase tracking-wider text-rose-600 flex items-center gap-1.5">
                 🚨 End Shift Session & Lock Desk
               </h4>
-              <p className="text-[10.5px] text-zinc-500 mt-1 max-w-md">
+              <p className="text-[10.5px] text-faint mt-1 max-w-md">
                 Terminate your active terminal cache session, secure all
                 registered outstanding accounts, and lock the hardware workspace
                 for next operator change.
@@ -1244,7 +1246,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
             <button
               onClick={onLogout}
-              className="px-4 py-2 w-full sm:w-auto text-center shrink-0 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black text-[11px] uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-md shadow-rose-900/10"
+              className="px-4 py-2 w-full sm:w-auto text-center shrink-0 bg-rose-600 hover:bg-rose-700 text-main rounded-[24px] font-black text-[11px] uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-md shadow-rose-900/10"
             >
               Sign Out Session
             </button>

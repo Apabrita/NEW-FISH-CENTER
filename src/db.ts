@@ -64,6 +64,7 @@ export interface Transaction {
   added_by: string;
   timestamp?: string | number;
   device_id?: string;
+  is_pending_price?: boolean;
 }
 export interface DailyCollection {
   id: string | number;
